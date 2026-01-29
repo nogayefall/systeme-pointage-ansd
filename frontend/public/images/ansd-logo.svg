@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 250" width="200" height="125">
+  <!-- Background -->
+  <rect width="400" height="250" fill="none"/>
+  
+  <!-- Dark Blue Rectangle (background) -->
+  <rect x="90" y="50" width="100" height="100" fill="#003D7A" rx="4"/>
+  
+  <!-- Light Blue Rectangle (main) -->
+  <rect x="110" y="65" width="90" height="85" fill="#00B4D8" rx="3"/>
+  
+  <!-- Light Blue Rectangle (layered) -->
+  <rect x="130" y="55" width="85" height="90" fill="#87CEEB" rx="3" opacity="0.8"/>
+  
+  <!-- Horizontal Line (left) -->
+  <line x1="60" y1="100" x2="130" y2="100" stroke="#003D7A" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Horizontal Line (right) -->
+  <line x1="240" y1="100" x2="310" y2="100" stroke="#003D7A" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Diagonal Line (chart/trend) -->
+  <polyline points="145,110 160,95 175,105 190,80 205,95" fill="none" stroke="#003D7A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- ANSD Text -->
+  <text x="200" y="190" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#003D7A" text-anchor="middle">ANSD</text>
+</svg>
