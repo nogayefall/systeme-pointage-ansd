@@ -10,7 +10,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/auth', name: 'api_auth_')]
 class AuthController extends AbstractController
@@ -25,13 +24,17 @@ class AuthController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        if (!isset($data['email']) || !isset($data['password'])) {
+        if ((!isset($data['email']) && !isset($data['matricule'])) || !isset($data['password'])) {
             return $this->json([
-                'error' => 'Email et mot de passe requis'
+                'error' => 'Identifiant (email ou matricule) et mot de passe requis'
             ], Response::HTTP_BAD_REQUEST);
         }
 
-        $user = $this->authService->authenticate($data['email'], $data['password']);
+        if (isset($data['matricule'])) {
+            $user = $this->authService->authenticateByMatricule($data['matricule'], $data['password']);
+        } else {
+            $user = $this->authService->authenticate($data['email'], $data['password']);
+        }
 
         if (!$user) {
             return $this->json([
@@ -39,11 +42,13 @@ class AuthController extends AbstractController
             ], Response::HTTP_UNAUTHORIZED);
         }
 
-        // Générer un token API pour l'utilisateur
-        $token = $user->generateApiToken();
-        $this->entityManager->flush();
+        // ⚠️ Générer le token SEULEMENT si inexistant
+        if (!$user->getApiToken()) {
+            $user->generateApiToken();
+            $this->entityManager->flush();
+        }
 
-        // Récupérer les permissions via le rôle
+        // Récupérer les permissions
         $permissions = [];
         if ($user->getRole()) {
             foreach ($user->getRole()->getPermissions() as $permission) {
@@ -52,7 +57,7 @@ class AuthController extends AbstractController
         }
 
         return $this->json([
-            'token' => $token,
+            'token' => $user->getApiToken(),
             'user' => [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
@@ -75,7 +80,6 @@ class AuthController extends AbstractController
             return $this->json(['error' => 'Non authentifié'], Response::HTTP_UNAUTHORIZED);
         }
 
-        // Récupérer les permissions via le rôle
         $permissions = [];
         if ($user->getRole()) {
             foreach ($user->getRole()->getPermissions() as $permission) {
@@ -92,14 +96,20 @@ class AuthController extends AbstractController
             'role' => $user->getRole()?->getName(),
             'roles' => $user->getRoles(),
             'permissions' => $permissions,
-            'isActive' => $user->isActive(),
         ]);
     }
 
     #[Route('/logout', name: 'logout', methods: ['POST'])]
     public function logout(): JsonResponse
     {
+        $user = $this->getUser();
+
+        if ($user) {
+            // Invalider le token
+            $user->setApiToken(null);
+            $this->entityManager->flush();
+        }
+
         return $this->json(['message' => 'Déconnecté avec succès']);
     }
 }
-

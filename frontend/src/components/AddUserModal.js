@@ -13,6 +13,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded, roles }) => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showAgentPasswordField, setShowAgentPasswordField] = useState(false);
 
   // Trouver le rôle "Agent" pour vérifier si c'est un agent simple
   const agentRole = roles?.find(r => r.name.toLowerCase() === 'agent');
@@ -56,16 +57,25 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded, roles }) => {
         roleId: parseInt(formData.roleId),
       };
 
-      // Ajouter email et password seulement si ce n'est pas un agent simple
-      if (!isSimpleAgent) {
+      // Ajouter email si fourni (optionnel pour agents)
+      if (formData.email) {
         submitData.email = formData.email;
+      }
+
+      // Ajouter password si fourni (requis pour non-agents, optionnel pour agents)
+      if (formData.password) {
         submitData.password = formData.password;
       }
 
       const response = await api.post('/users', submitData);
 
       if (response.status === 201 || response.status === 200) {
-        alert('Utilisateur créé avec succès!');
+        const plain = response.data?.plainPassword;
+        if (plain) {
+          alert(`Utilisateur créé — identifiants:\nMatricule: ${response.data.user.matricule}\nMot de passe: ${plain}`);
+        } else {
+          alert('Utilisateur créé avec succès!');
+        }
         setFormData({
           email: '',
           password: '',
@@ -74,6 +84,7 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded, roles }) => {
           prenom: '',
           roleId: '',
         });
+        setShowAgentPasswordField(false);
         onUserAdded();
         onClose();
       }
@@ -118,26 +129,23 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded, roles }) => {
 
           {isSimpleAgent && (
             <div className="info-message">
-              ℹ️ Les agents simples n'ont pas de compte utilisateur. Seul le matricule, nom et prénom sont nécessaires.
+              ℹ️ Un compte sera créé pour cet agent. Par défaut le mot de passe sera le matricule. Vous pouvez définir un mot de passe personnalisé.
             </div>
           )}
 
-          {/* Email - Masqué pour les agents simples */}
-          {!isSimpleAgent && (
-            <div className="form-group">
-              <label>Email *</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="email@example.com"
-                required={!isSimpleAgent}
-              />
-            </div>
-          )}
+          {/* Email - Masqué pour les agents simples sauf si fourni */}
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="email@example.com"
+            />
+          </div>
 
-          {/* Mot de passe - Masqué pour les agents simples */}
+          {/* Mot de passe - requis pour non-agents, optionnel pour agents */}
           {!isSimpleAgent && (
             <div className="form-group">
               <label>Mot de passe *</label>
@@ -148,6 +156,28 @@ const AddUserModal = ({ isOpen, onClose, onUserAdded, roles }) => {
                 onChange={handleChange}
                 placeholder="••••••••"
                 required={!isSimpleAgent}
+              />
+            </div>
+          )}
+
+          {isSimpleAgent && (
+            <div className="form-group">
+              <label>
+                <input type="checkbox" checked={showAgentPasswordField} onChange={() => setShowAgentPasswordField(v => !v)} />
+                {' '}Définir un mot de passe personnalisé (optionnel)
+              </label>
+            </div>
+          )}
+
+          {isSimpleAgent && showAgentPasswordField && (
+            <div className="form-group">
+              <label>Mot de passe (optionnel)</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Mot de passe personnalisé"
               />
             </div>
           )}

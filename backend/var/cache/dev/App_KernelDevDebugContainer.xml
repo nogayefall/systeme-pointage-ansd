@@ -509,6 +509,16 @@
         <argument type="service" id=".service_locator.TJNRSaV.App\Controller\Api\BadgeCodeController"/>
       </call>
     </service>
+    <service id="App\Controller\Api\LeaveRequestController" class="App\Controller\Api\LeaveRequestController" public="true" autowire="true" autoconfigure="true">
+      <tag name="controller.service_arguments"/>
+      <tag name="routing.controller"/>
+      <tag name="container.service_subscriber"/>
+      <argument type="service" id="doctrine.orm.default_entity_manager"/>
+      <argument type="service" id="App\Repository\LeaveRequestRepository"/>
+      <call method="setContainer">
+        <argument type="service" id=".service_locator.TJNRSaV.App\Controller\Api\LeaveRequestController"/>
+      </call>
+    </service>
     <service id="App\Controller\Api\ReportController" class="App\Controller\Api\ReportController" public="true" autowire="true" autoconfigure="true">
       <tag name="controller.service_arguments"/>
       <tag name="routing.controller"/>
@@ -532,6 +542,7 @@
       <tag name="routing.controller"/>
       <tag name="container.service_subscriber"/>
       <argument type="service" id="doctrine.orm.default_entity_manager"/>
+      <argument type="service" id="App\Repository\LeaveRequestRepository"/>
       <call method="setContainer">
         <argument type="service" id=".service_locator.TJNRSaV.App\Controller\Api\StatisticsController"/>
       </call>
@@ -577,6 +588,10 @@
       <tag name="container.excluded" source="because it's a Doctrine entity"/>
       <tag name="container.excluded" source="with #[Doctrine\ORM\Mapping\Entity] attribute"/>
     </service>
+    <service id="App\Entity\LeaveRequest" class="App\Entity\LeaveRequest" autowire="true" autoconfigure="true">
+      <tag name="container.excluded" source="because it's a Doctrine entity"/>
+      <tag name="container.excluded" source="with #[Doctrine\ORM\Mapping\Entity] attribute"/>
+    </service>
     <service id="App\Entity\Permission" class="App\Entity\Permission" autowire="true" autoconfigure="true">
       <tag name="container.excluded" source="because it's a Doctrine entity"/>
       <tag name="container.excluded" source="with #[Doctrine\ORM\Mapping\Entity] attribute"/>
@@ -594,6 +609,10 @@
       <tag name="container.excluded" source="with #[Doctrine\ORM\Mapping\Entity] attribute"/>
     </service>
     <service id="App\Repository\BadgeCodeRepository" class="App\Repository\BadgeCodeRepository" autowire="true" autoconfigure="true">
+      <tag name="doctrine.repository_service"/>
+      <argument type="service" id="doctrine"/>
+    </service>
+    <service id="App\Repository\LeaveRequestRepository" class="App\Repository\LeaveRequestRepository" autowire="true" autoconfigure="true">
       <tag name="doctrine.repository_service"/>
       <argument type="service" id="doctrine"/>
     </service>
@@ -3834,6 +3853,7 @@
       <argument type="collection">
         <argument>App\Controller\Api\AuthController</argument>
         <argument>App\Controller\Api\BadgeCodeController</argument>
+        <argument>App\Controller\Api\LeaveRequestController</argument>
         <argument>App\Controller\Api\ReportController</argument>
         <argument>App\Controller\Api\RoleController</argument>
         <argument>App\Controller\Api\StatisticsController</argument>
@@ -5727,7 +5747,7 @@
     <service id="doctrine.orm.configuration" class="Doctrine\ORM\Configuration" abstract="true"/>
     <service id="doctrine.orm.entity_manager.abstract" class="Doctrine\ORM\EntityManager" lazy="true" abstract="true"/>
     <service id="doctrine.orm.container_repository_factory" class="Doctrine\Bundle\DoctrineBundle\Repository\ContainerRepositoryFactory">
-      <argument type="service" id=".service_locator.GvOguQl"/>
+      <argument type="service" id=".service_locator.ltJ_dN6"/>
     </service>
     <service id="doctrine.orm.manager_configurator.abstract" class="Doctrine\Bundle\DoctrineBundle\ManagerConfigurator" abstract="true">
       <argument type="collection"/>
@@ -7926,6 +7946,10 @@
     <service id=".instanceof.Symfony\Bundle\FrameworkBundle\Controller\AbstractController.0.App\Controller\Api\BadgeCodeController" class="App\Controller\Api\BadgeCodeController" autowire="true" abstract="true"/>
     <service id=".instanceof.App\Controller\Api\BadgeCodeController.0.App\Controller\Api\BadgeCodeController" class="App\Controller\Api\BadgeCodeController" autowire="true" abstract="true"/>
     <service id=".abstract.instanceof.App\Controller\Api\BadgeCodeController" class="App\Controller\Api\BadgeCodeController" autowire="true" autoconfigure="true" abstract="true"/>
+    <service id=".instanceof.Symfony\Contracts\Service\ServiceSubscriberInterface.0.App\Controller\Api\LeaveRequestController" class="App\Controller\Api\LeaveRequestController" autowire="true" abstract="true"/>
+    <service id=".instanceof.Symfony\Bundle\FrameworkBundle\Controller\AbstractController.0.App\Controller\Api\LeaveRequestController" class="App\Controller\Api\LeaveRequestController" autowire="true" abstract="true"/>
+    <service id=".instanceof.App\Controller\Api\LeaveRequestController.0.App\Controller\Api\LeaveRequestController" class="App\Controller\Api\LeaveRequestController" autowire="true" abstract="true"/>
+    <service id=".abstract.instanceof.App\Controller\Api\LeaveRequestController" class="App\Controller\Api\LeaveRequestController" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".instanceof.Symfony\Contracts\Service\ServiceSubscriberInterface.0.App\Controller\Api\ReportController" class="App\Controller\Api\ReportController" autowire="true" abstract="true"/>
     <service id=".instanceof.Symfony\Bundle\FrameworkBundle\Controller\AbstractController.0.App\Controller\Api\ReportController" class="App\Controller\Api\ReportController" autowire="true" abstract="true"/>
     <service id=".instanceof.App\Controller\Api\ReportController.0.App\Controller\Api\ReportController" class="App\Controller\Api\ReportController" autowire="true" abstract="true"/>
@@ -7956,6 +7980,8 @@
     <service id=".abstract.instanceof.App\Controller\RoleController" class="App\Controller\RoleController" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".instanceof.App\Entity\BadgeCode.0.App\Entity\BadgeCode" class="App\Entity\BadgeCode" autowire="true" abstract="true"/>
     <service id=".abstract.instanceof.App\Entity\BadgeCode" class="App\Entity\BadgeCode" autowire="true" autoconfigure="true" abstract="true"/>
+    <service id=".instanceof.App\Entity\LeaveRequest.0.App\Entity\LeaveRequest" class="App\Entity\LeaveRequest" autowire="true" abstract="true"/>
+    <service id=".abstract.instanceof.App\Entity\LeaveRequest" class="App\Entity\LeaveRequest" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".instanceof.App\Entity\Permission.0.App\Entity\Permission" class="App\Entity\Permission" autowire="true" abstract="true"/>
     <service id=".abstract.instanceof.App\Entity\Permission" class="App\Entity\Permission" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".instanceof.App\Entity\Pointage.0.App\Entity\Pointage" class="App\Entity\Pointage" autowire="true" abstract="true"/>
@@ -7966,6 +7992,8 @@
     <service id=".abstract.instanceof.App\Entity\User" class="App\Entity\User" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".instanceof.Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface.0.App\Repository\BadgeCodeRepository" class="App\Repository\BadgeCodeRepository" autowire="true" abstract="true"/>
     <service id=".abstract.instanceof.App\Repository\BadgeCodeRepository" class="App\Repository\BadgeCodeRepository" autowire="true" autoconfigure="true" abstract="true"/>
+    <service id=".instanceof.Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface.0.App\Repository\LeaveRequestRepository" class="App\Repository\LeaveRequestRepository" autowire="true" abstract="true"/>
+    <service id=".abstract.instanceof.App\Repository\LeaveRequestRepository" class="App\Repository\LeaveRequestRepository" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".instanceof.Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface.0.App\Repository\PermissionRepository" class="App\Repository\PermissionRepository" autowire="true" abstract="true"/>
     <service id=".abstract.instanceof.App\Repository\PermissionRepository" class="App\Repository\PermissionRepository" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".instanceof.Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface.0.App\Repository\PointageRepository" class="App\Repository\PointageRepository" autowire="true" abstract="true"/>
@@ -8851,10 +8879,11 @@
         <argument key="turbo.doctrine.event_listener" type="service_closure" id="turbo.doctrine.event_listener"/>
       </argument>
     </service>
-    <service id=".service_locator.GvOguQl" class="Symfony\Component\DependencyInjection\ServiceLocator">
+    <service id=".service_locator.ltJ_dN6" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
       <argument type="collection">
         <argument key="App\Repository\BadgeCodeRepository" type="service_closure" id="App\Repository\BadgeCodeRepository"/>
+        <argument key="App\Repository\LeaveRequestRepository" type="service_closure" id="App\Repository\LeaveRequestRepository"/>
         <argument key="App\Repository\PermissionRepository" type="service_closure" id="App\Repository\PermissionRepository"/>
         <argument key="App\Repository\PointageRepository" type="service_closure" id="App\Repository\PointageRepository"/>
         <argument key="App\Repository\RoleRepository" type="service_closure" id="App\Repository\RoleRepository"/>
@@ -9139,6 +9168,12 @@
       <argument type="service" id="service_container"/>
       <factory service=".service_locator.TJNRSaV" method="withContext"/>
     </service>
+    <service id=".service_locator.TJNRSaV.App\Controller\Api\LeaveRequestController" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator_context" id="App\Controller\Api\LeaveRequestController"/>
+      <argument>App\Controller\Api\LeaveRequestController</argument>
+      <argument type="service" id="service_container"/>
+      <factory service=".service_locator.TJNRSaV" method="withContext"/>
+    </service>
     <service id=".service_locator.TJNRSaV.App\Controller\Api\ReportController" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator_context" id="App\Controller\Api\ReportController"/>
       <argument>App\Controller\Api\ReportController</argument>
@@ -9382,6 +9417,7 @@
           <argument>App\Kernel</argument>
           <argument>App\Controller\Api\AuthController</argument>
           <argument>App\Controller\Api\BadgeCodeController</argument>
+          <argument>App\Controller\Api\LeaveRequestController</argument>
           <argument>App\Controller\Api\ReportController</argument>
           <argument>App\Controller\Api\RoleController</argument>
           <argument>App\Controller\Api\StatisticsController</argument>

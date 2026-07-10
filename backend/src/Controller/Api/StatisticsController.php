@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 use App\Entity\Pointage;
 use App\Entity\User;
 use App\Entity\Role;
+use App\Repository\LeaveRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -14,7 +15,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/api/statistics', name: 'api_statistics_')]
 class StatisticsController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $entityManager) {}
+    public function __construct(private EntityManagerInterface $entityManager, private LeaveRequestRepository $leaveRepo) {}
 
     /**
      * KPIs du jour: Total pointages, présents, retards, etc.
@@ -84,8 +85,17 @@ class StatisticsController extends AbstractController
         }
 
         $totalAgents = count($allAgents);
-        $agentsAbsent = $totalAgents - count($agentsPresent);
-        $attendanceRate = $totalAgents > 0 ? round((count($agentsPresent) / $totalAgents) * 100, 2) : 0;
+        $agentsOnLeave = 0;
+        foreach ($allAgents as $agent) {
+            if ($this->leaveRepo->hasApprovedLeaveOnDate($agent, $targetDate)) {
+                $agentsOnLeave++; 
+            }
+        }
+
+        $agentsAbsent = $totalAgents - count($agentsPresent) - $agentsOnLeave;
+        // Calculer taux de présence en excluant les agents en congé
+        $effectiveDenominator = ($totalAgents - $agentsOnLeave) > 0 ? ($totalAgents - $agentsOnLeave) : $totalAgents;
+        $attendanceRate = $effectiveDenominator > 0 ? round((count($agentsPresent) / $effectiveDenominator) * 100, 2) : 0;
 
         return $this->json([
             'success' => true,
@@ -309,8 +319,11 @@ class StatisticsController extends AbstractController
                 }
             }
 
+
             $daysWorked = count($pointageDates);
-            $daysAbsent = $daysInPeriod - $daysWorked;
+            // Nombre de jours de congé approuvés dans la période
+            $daysOnLeave = $this->leaveRepo->countApprovedDaysBetween($agent, $startDate, $endDate);
+            $daysAbsent = $daysInPeriod - $daysWorked - $daysOnLeave;
 
             $attendanceStats['present'] += ($daysWorked > 0 ? 1 : 0);
             $attendanceStats['absent'] += ($daysAbsent > 0 ? 1 : 0);

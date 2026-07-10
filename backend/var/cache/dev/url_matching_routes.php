@@ -22,6 +22,10 @@ return [
             [['_route' => 'api_badge_codes_list', '_controller' => 'App\\Controller\\Api\\BadgeCodeController::list'], null, ['GET' => 0], null, false, false, null],
             [['_route' => 'api_badge_codes_create', '_controller' => 'App\\Controller\\Api\\BadgeCodeController::create'], null, ['POST' => 0], null, false, false, null],
         ],
+        '/api/leaves' => [
+            [['_route' => 'api_leaves_create', '_controller' => 'App\\Controller\\Api\\LeaveRequestController::create'], null, ['POST' => 0], null, false, false, null],
+            [['_route' => 'api_leaves_list', '_controller' => 'App\\Controller\\Api\\LeaveRequestController::list'], null, ['GET' => 0], null, false, false, null],
+        ],
         '/api/reports/pointages' => [[['_route' => 'api_reports_list_pointages', '_controller' => 'App\\Controller\\Api\\ReportController::listPointages'], null, ['GET' => 0], null, false, false, null]],
         '/api/reports/attendance' => [[['_route' => 'api_reports_attendance', '_controller' => 'App\\Controller\\Api\\ReportController::attendance'], null, ['GET' => 0], null, false, false, null]],
         '/api/reports/anomalies' => [[['_route' => 'api_reports_anomalies', '_controller' => 'App\\Controller\\Api\\ReportController::anomalies'], null, ['GET' => 0], null, false, false, null]],
@@ -44,6 +48,7 @@ return [
         ],
         '/api/pointages/today' => [[['_route' => 'api_pointages_today', '_controller' => 'App\\Controller\\PointageController::today'], null, ['GET' => 0], null, false, false, null]],
         '/api/pointages/agents' => [[['_route' => 'api_pointages_list_agents', '_controller' => 'App\\Controller\\PointageController::listAgents'], null, ['GET' => 0], null, false, false, null]],
+        '/api/pointages/my' => [[['_route' => 'api_pointages_my_pointages', '_controller' => 'App\\Controller\\PointageController::myPointages'], null, ['GET' => 0], null, false, false, null]],
         '/api/roles' => [
             [['_route' => 'api_roles_list', '_controller' => 'App\\Controller\\RoleController::list'], null, ['GET' => 0], null, false, false, null],
             [['_route' => 'api_roles_create', '_controller' => 'App\\Controller\\RoleController::create'], null, ['POST' => 0], null, false, false, null],
@@ -71,21 +76,25 @@ return [
                 .')'
                 .'|/api/(?'
                     .'|badge\\-codes/([^/]++)(*:231)'
+                    .'|leaves/([^/]++)/(?'
+                        .'|approve(*:265)'
+                        .'|reject(*:279)'
+                    .')'
                     .'|users/([^/]++)(?'
-                        .'|(*:256)'
+                        .'|(*:305)'
                     .')'
                     .'|p(?'
                         .'|ermissions/([^/]++)(?'
-                            .'|(*:291)'
+                            .'|(*:340)'
                         .')'
                         .'|ointages/(?'
-                            .'|check/([^/]++)(*:326)'
-                            .'|([^/]++)(*:342)'
+                            .'|check/([^/]++)(*:375)'
+                            .'|([^/]++)(*:391)'
                         .')'
                     .')'
                     .'|roles/([^/]++)(?'
-                        .'|(*:369)'
-                        .'|/permissions(*:389)'
+                        .'|(*:418)'
+                        .'|/permissions(*:438)'
                     .')'
                 .')'
             .')/?$}sDu',
@@ -100,22 +109,24 @@ return [
         181 => [[['_route' => '_profiler_exception_css', '_controller' => 'web_profiler.controller.exception_panel::stylesheet'], ['token'], null, null, false, false, null]],
         191 => [[['_route' => '_profiler', '_controller' => 'web_profiler.controller.profiler::panelAction'], ['token'], null, null, false, true, null]],
         231 => [[['_route' => 'api_badge_codes_delete', '_controller' => 'App\\Controller\\Api\\BadgeCodeController::delete'], ['id'], ['DELETE' => 0], null, false, true, null]],
-        256 => [
+        265 => [[['_route' => 'api_leaves_approve', '_controller' => 'App\\Controller\\Api\\LeaveRequestController::approve'], ['id'], ['POST' => 0], null, false, false, null]],
+        279 => [[['_route' => 'api_leaves_reject', '_controller' => 'App\\Controller\\Api\\LeaveRequestController::reject'], ['id'], ['POST' => 0], null, false, false, null]],
+        305 => [
             [['_route' => 'api_users_update', '_controller' => 'App\\Controller\\Api\\UserController::update'], ['id'], ['PUT' => 0], null, false, true, null],
             [['_route' => 'api_users_delete', '_controller' => 'App\\Controller\\Api\\UserController::delete'], ['id'], ['DELETE' => 0], null, false, true, null],
         ],
-        291 => [
+        340 => [
             [['_route' => 'api_permissions_update', '_controller' => 'App\\Controller\\PermissionController::update'], ['id'], ['PUT' => 0], null, false, true, null],
             [['_route' => 'api_permissions_delete', '_controller' => 'App\\Controller\\PermissionController::delete'], ['id'], ['DELETE' => 0], null, false, true, null],
         ],
-        326 => [[['_route' => 'api_pointages_check_agent', '_controller' => 'App\\Controller\\PointageController::checkAgent'], ['matricule'], ['GET' => 0], null, false, true, null]],
-        342 => [[['_route' => 'api_pointages_delete', '_controller' => 'App\\Controller\\PointageController::delete'], ['id'], ['DELETE' => 0], null, false, true, null]],
-        369 => [
+        375 => [[['_route' => 'api_pointages_check_agent', '_controller' => 'App\\Controller\\PointageController::checkAgent'], ['matricule'], ['GET' => 0], null, false, true, null]],
+        391 => [[['_route' => 'api_pointages_delete', '_controller' => 'App\\Controller\\PointageController::delete'], ['id'], ['DELETE' => 0], null, false, true, null]],
+        418 => [
             [['_route' => 'api_roles_show', '_controller' => 'App\\Controller\\RoleController::show'], ['id'], ['GET' => 0], null, false, true, null],
             [['_route' => 'api_roles_update', '_controller' => 'App\\Controller\\RoleController::update'], ['id'], ['PUT' => 0], null, false, true, null],
             [['_route' => 'api_roles_delete', '_controller' => 'App\\Controller\\RoleController::delete'], ['id'], ['DELETE' => 0], null, false, true, null],
         ],
-        389 => [
+        438 => [
             [['_route' => 'api_roles_update_permissions', '_controller' => 'App\\Controller\\RoleController::updatePermissions'], ['id'], ['PUT' => 0], null, false, false, null],
             [null, null, null, null, false, false, 0],
         ],

@@ -1,0 +1,7 @@
+.leaves-filters{display:flex;gap:8px;align-items:center;margin:12px 0}
+.leaves-filters input{flex:1;padding:8px;border:1px solid #ddd;border-radius:4px}
+.leaves-filters select{padding:8px;border:1px solid #ddd;border-radius:4px}
+.leaves-table td, .leaves-table th{padding:8px;border-bottom:1px solid #eee}
+.leaves-pagination{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:12px}
+.btn-approve{background:#28a745;color:#fff;border:none;padding:6px 8px;border-radius:6px;margin-right:6px}
+.btn-reject{background:#dc3545;color:#fff;border:none;padding:6px 8px;border-radius:6px}

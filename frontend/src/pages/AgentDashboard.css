@@ -1,0 +1,24 @@
+/* Simple styling for agent dashboard */
+.agent-dashboard { padding: 20px; font-family: Arial, Helvetica, sans-serif; }
+.ad-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+.ad-cards { display:flex; gap:12px; margin-bottom:18px; }
+.card { background:#fff; border-radius:6px; padding:14px; box-shadow:0 1px 3px rgba(0,0,0,0.08); flex:1; }
+.card-title { color:#666; font-size:13px; }
+.card-value { font-size:22px; font-weight:700; margin-top:8px; }
+.ad-main { display:flex; gap:18px; }
+.ad-left { flex:2; background:#fff; padding:12px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+.ad-right { width:320px; display:flex; flex-direction:column; gap:12px; }
+.table { width:100%; border-collapse:collapse; }
+.table th, .table td { text-align:left; padding:8px 6px; border-bottom:1px solid #eee; }
+.leave-box { background:#fff; padding:12px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+.leave-form label { display:block; font-size:13px; margin-top:8px; }
+.leave-form input, .leave-form textarea { width:100%; padding:8px; margin-top:6px; box-sizing:border-box; border:1px solid #ddd; border-radius:4px; }
+.btn { margin-top:10px; background:#007bff; color:#fff; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; }
+.error { color:#a00; margin-bottom:8px; }
+.leave-list { background:#fff; padding:12px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+.leave-item { padding:8px 0; border-bottom:1px dashed #eee; }
+.leave-item .leave-status { font-size:12px; color:#333; margin-top:6px; }
+.leave-item.approved { border-left:4px solid #2ecc71; padding-left:8px; }
+.leave-item.pending { border-left:4px solid #f1c40f; padding-left:8px; }
+.leave-item.rejected { border-left:4px solid #e74c3c; padding-left:8px; }
+@media(max-width:900px){ .ad-main{ flex-direction:column } .ad-right{ width:100% }}

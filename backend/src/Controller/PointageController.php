@@ -262,6 +262,51 @@ class PointageController extends AbstractController
         ]);
     }
 
+    #[Route('/my', name: 'my_pointages', methods: ['GET'])]
+    #[IsGranted('ROLE_AGENT')]
+    public function myPointages(Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+
+        $page = max(1, (int)$request->query->get('page', 1));
+        $limit = (int)$request->query->get('limit', 50);
+        $offset = ($page - 1) * $limit;
+
+        $pointageRepository = $this->entityManager->getRepository(Pointage::class);
+
+        $qb = $pointageRepository->createQueryBuilder('p')
+            ->where('p.agent = :agent')
+            ->setParameter('agent', $user)
+            ->orderBy('p.dateTime', 'DESC')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit);
+
+        $pointages = $qb->getQuery()->getResult();
+        $total = $pointageRepository->count(['agent' => $user]);
+
+        $data = [];
+        foreach ($pointages as $pointage) {
+            $data[] = [
+                'id' => $pointage->getId(),
+                'type' => $pointage->getType(),
+                'method' => $pointage->getMethod(),
+                'datetime' => $pointage->getDateTime()?->format('Y-m-d H:i:s'),
+                'notes' => $pointage->getNotes(),
+            ];
+        }
+
+        return $this->json([
+            'success' => true,
+            'data' => $data,
+            'pagination' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'pages' => ceil($total / $limit),
+            ],
+        ]);
+    }
+
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
     public function delete(Pointage $pointage): JsonResponse
     {

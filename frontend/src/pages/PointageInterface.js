@@ -376,7 +376,7 @@ export const PointageInterface = () => {
         {/* Scanner section - Centré et agrandi */}
         <div className="scanner-section">
           <div className="scanner-card">
-            <div className="scanner-title">📱 Scanner un Badge</div>
+            <div className="scanner-title"> Scanner un Badge</div>
             
             {message && (
               <div className={`message message-${messageType}`}>
@@ -430,7 +430,7 @@ export const PointageInterface = () => {
         {/* Agents list section */}
         <div className="agents-section">
           <div className="agents-header">
-            <h2>📋 Liste des Agents</h2>
+            <h2> Liste des Agents</h2>
             <input
               type="text"
               placeholder="Rechercher par matricule, nom ou prenom..."
@@ -470,7 +470,7 @@ export const PointageInterface = () => {
                           disabled={loading}
                           title="Enregistrer un pointage manuel"
                         >
-                          📍 Pointer
+                           Pointer
                         </button>
                       </td>
                     </tr>
@@ -482,12 +482,12 @@ export const PointageInterface = () => {
         </div>
       </div>
 
-      {/* Debug log */}
-      <div className="debug-log">
-        {debugLog.map((log, i) => (
-          <div key={i}>{log}</div>
-        ))}
-      </div>
+      {/* <div className="debug-log">
+  {debugLog.map((log, i) => (
+    <div key={i}>{log}</div>
+  ))}
+</div> */}
+
     </div>
   );
 };

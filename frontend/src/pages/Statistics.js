@@ -139,15 +139,6 @@ export const Statistics = () => {
             <AttendanceChart data={agentAttendanceData} />
           </div>
         </div>
-
-        {/* Tableau assiduité détaillée */}
-        <div className="detailed-attendance">
-          <h3>Détail Assiduité</h3>
-          <ReportTable
-            data={agentAttendanceData}
-            columns={['agent', 'daysWorked', 'daysAbsent', 'lateArrivals', 'attendanceRate']}
-          />
-        </div>
       </div>
     </div>
   );

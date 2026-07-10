@@ -64,4 +64,4 @@ L'application sera disponible à : `http://localhost:3000`
 
 ---
 
-**Prêt à commencer le développement!** 🚀
+**Prêt à commencer le développement!** 

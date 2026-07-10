@@ -70,4 +70,24 @@ class AuthService
 
         return $user;
     }
+
+    public function authenticateByMatricule(string $matricule, string $password): ?User
+    {
+        $userRepo = $this->entityManager->getRepository(User::class);
+        $user = $userRepo->findOneBy(['matricule' => $matricule]);
+
+        if (!$user) {
+            return null;
+        }
+
+        if (!$this->passwordHasher->isPasswordValid($user, $password)) {
+            return null;
+        }
+
+        if (!$user->isActive()) {
+            return null;
+        }
+
+        return $user;
+    }
 }

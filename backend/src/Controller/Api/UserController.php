@@ -164,20 +164,30 @@ class UserController extends AbstractController
         // Vérifier si c'est un agent simple (pas de compte)
         $isSimpleAgent = strtolower($role->getName()) === 'agent';
 
+        $plainPasswordToReturn = null;
+
         if ($isSimpleAgent) {
-            // Agent simple: pas besoin d'email/password
+            // Agent simple: créer un compte utilisable (matricule + password)
             $user = new User();
             $user->setMatricule($data['matricule']);
             $user->setNom($data['nom']);
             $user->setPrenom($data['prenom']);
             $user->setRole($role);
             $user->setRoles($rbacRoles);
-            // Email générique pour les agents simples
-            $user->setEmail('agent-' . uniqid() . '@ansd.local');
-            // Password générique (ne sera jamais utilisé)
-            $hashedPassword = $this->passwordHasher->hashPassword($user, uniqid());
+
+            // Email générique si non fourni
+            $email = $data['email'] ?? ('agent-' . uniqid() . '@ansd.local');
+            $user->setEmail($email);
+
+            // Déterminer le mot de passe en clair : si l'admin en fournit un, l'utiliser,
+            // sinon utiliser le matricule comme mot de passe par défaut pour faciliter la connexion.
+            $plainPassword = $data['password'] ?? $data['matricule'];
+            $hashedPassword = $this->passwordHasher->hashPassword($user, $plainPassword);
             $user->setPassword($hashedPassword);
             $user->setIsActive(true);
+
+            // Préparer pour l'inclure dans la réponse (à communiquer à l'agent)
+            $plainPasswordToReturn = $plainPassword;
         } else {
             // Utilisateur avec compte: email et password requis
             if (!isset($data['email']) || !isset($data['password'])) {
@@ -205,14 +215,20 @@ class UserController extends AbstractController
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
-        return $this->json([
+        $response = [
             'message' => 'Utilisateur créé avec succès',
             'user' => [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'matricule' => $user->getMatricule(),
             ]
-        ], Response::HTTP_CREATED);
+        ];
+
+        if ($plainPasswordToReturn) {
+            $response['plainPassword'] = $plainPasswordToReturn;
+        }
+
+        return $this->json($response, Response::HTTP_CREATED);
     }
 
     #[Route('/{id}', name: 'update', methods: ['PUT'])]

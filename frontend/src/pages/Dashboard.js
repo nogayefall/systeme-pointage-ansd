@@ -7,6 +7,7 @@ import EditUserModal from '../components/EditUserModal';
 import RolesManagement from './RolesManagement';
 import { Reports } from './Reports';
 import { Statistics } from './Statistics';
+import { LeaveManagement } from './LeaveManagement';
 import './Dashboard.css';
 
 export const Dashboard = () => {
@@ -196,6 +197,16 @@ export const Dashboard = () => {
                     Utilisateurs
                   </button>
                 </li>
+                {(user?.roles?.includes('ROLE_RH_ADMIN') || user?.roles?.includes('ROLE_SUPER_ADMIN')) && (
+                <li>
+                  <button 
+                    className={`menu-link ${activeSection === 'leaves' ? 'active' : ''}`}
+                    onClick={() => setActiveSection('leaves')}
+                  >
+                    Gestion des congés
+                  </button>
+                </li>
+                )}
                 <li>
                   <button 
                     className={`menu-link ${activeSection === 'roles' ? 'active' : ''}`}
@@ -498,6 +509,13 @@ export const Dashboard = () => {
                   </>
                 )}
               </div>
+            </section>
+          )}
+
+          {/* Section Gestion des congés - Visible pour RH Admin et Super Admin */}
+          {activeSection === 'leaves' && (user?.roles?.includes('ROLE_RH_ADMIN') || user?.roles?.includes('ROLE_SUPER_ADMIN')) && (
+            <section className="content-section">
+              <LeaveManagement />
             </section>
           )}
 

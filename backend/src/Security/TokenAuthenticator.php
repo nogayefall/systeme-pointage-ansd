@@ -46,6 +46,8 @@ class TokenAuthenticator extends AbstractAuthenticator
         $user = $this->userRepository->findOneBy(['apiToken' => $token]);
 
         if (!$user) {
+            // Log pour debug
+            error_log("Token invalide: " . substr($token, 0, 10) . "...");
             throw new AuthenticationException('Invalid token');
         }
 
