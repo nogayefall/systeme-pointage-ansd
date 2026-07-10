@@ -2,16 +2,21 @@
 backend/var/
 backend/vendor/
 
+# React
+frontend/node_modules/
+frontend/build/
+
 # Logs
 *.log
-
-# Cache
-cache/
-var/cache/
-
-# Node
-node_modules/
 
 # Environnement
 .env
 .env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Système
+.DS_Store
+Thumbs.db
