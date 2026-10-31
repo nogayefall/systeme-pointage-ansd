@@ -8,20 +8,31 @@ security:
                 class: App\Entity\User
                 property: email
 
+    # Le super administrateur peut tout ce que fait l'administrateur RH ;
+    # un supérieur hiérarchique est aussi un employé (il pointe et demande des congés).
+    role_hierarchy:
+        ROLE_SUPER_ADMIN: [ROLE_RH_ADMIN]
+        ROLE_SUPERVISOR: [ROLE_AGENT]
+
     firewalls:
         dev:
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
-        
+
         main:
+            # API à jeton : aucune session côté serveur.
+            stateless: true
             lazy: true
             provider: app_user_provider
             user_checker: App\Security\UserChecker
             custom_authenticators:
                 - App\Security\TokenAuthenticator
+            entry_point: App\Security\TokenAuthenticator
 
     access_control:
-
+        # Seule la connexion est publique ; tout le reste de l'API exige un jeton valide.
+        - { path: ^/api/auth/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
     security:

@@ -38,11 +38,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\JoinColumn(nullable: false)]
     private ?Role $role = null;
 
+    /** Service (équipe) auquel appartient l'employé. */
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Department $department = null;
+
     #[ORM\Column]
     private bool $isActive = true;
 
+    /** Empreinte SHA-256 du jeton d'API (le jeton en clair n'est jamais stocké). */
     #[ORM\Column(length: 64, nullable: true, unique: true)]
     private ?string $apiToken = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $apiTokenExpiresAt = null;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
@@ -131,6 +140,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 'Super Administrateur' => 'ROLE_SUPER_ADMIN',
                 'Administrateur RH' => 'ROLE_RH_ADMIN',
                 'Agent de Sécurité' => 'ROLE_SECURITY_AGENT',
+                'Supérieur hiérarchique' => 'ROLE_SUPERVISOR',
                 'Agent' => 'ROLE_AGENT',
             ];
             
@@ -182,6 +192,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getDepartment(): ?Department
+    {
+        return $this->department;
+    }
+
+    public function setDepartment(?Department $department): static
+    {
+        $this->department = $department;
+
+        return $this;
+    }
+
     public function isActive(): bool
     {
         return $this->isActive;
@@ -226,13 +248,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setApiToken(?string $apiToken): static
     {
         $this->apiToken = $apiToken;
-
         return $this;
     }
 
-    public function generateApiToken(): string
+    public function getApiTokenExpiresAt(): ?\DateTimeImmutable
     {
-        $this->apiToken = bin2hex(random_bytes(32));
-        return $this->apiToken;
+        return $this->apiTokenExpiresAt;
+    }
+
+    /**
+     * Génère un nouveau jeton, ne conserve que son empreinte et sa date d'expiration,
+     * et retourne le jeton en clair (à transmettre une seule fois au client).
+     */
+    public function issueApiToken(int $ttlSeconds = 43200): string
+    {
+        $plain = bin2hex(random_bytes(32));
+        $this->apiToken = self::hashToken($plain);
+        $this->apiTokenExpiresAt = new \DateTimeImmutable('+' . $ttlSeconds . ' seconds');
+
+        return $plain;
+    }
+
+    public function revokeApiToken(): void
+    {
+        $this->apiToken = null;
+        $this->apiTokenExpiresAt = null;
+    }
+
+    public static function hashToken(string $plain): string
+    {
+        return hash('sha256', $plain);
     }
 }

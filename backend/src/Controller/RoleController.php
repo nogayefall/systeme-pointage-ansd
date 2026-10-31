@@ -12,6 +12,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/roles', name: 'api_roles_')]
+#[IsGranted('ROLE_RH_ADMIN')]
 class RoleController extends AbstractController
 {
     public function __construct(private EntityManagerInterface $entityManager) {}
@@ -19,10 +20,6 @@ class RoleController extends AbstractController
     #[Route('', name: 'list', methods: ['GET'])]
     public function list(): JsonResponse
     {
-        // Vérifier que l'utilisateur a au moins un des rôles autorisés
-        if (!$this->isGranted('ROLE_SUPER_ADMIN') && !$this->isGranted('ROLE_RH_ADMIN')) {
-            return $this->json(['error' => 'Accès non autorisé'], 403);
-        }
         $roles = $this->entityManager->getRepository(Role::class)->findAll();
         
         $data = [];
@@ -54,10 +51,6 @@ class RoleController extends AbstractController
     #[Route('/{id}', name: 'show', methods: ['GET'])]
     public function show(int $id): JsonResponse
     {
-        // Vérifier que l'utilisateur a au least un des rôles autorisés
-        if (!$this->isGranted('ROLE_SUPER_ADMIN') && !$this->isGranted('ROLE_RH_ADMIN')) {
-            return $this->json(['error' => 'Accès non autorisé'], 403);
-        }
         $role = $this->entityManager->getRepository(Role::class)->find($id);
         
         if (!$role) {
@@ -86,12 +79,9 @@ class RoleController extends AbstractController
     }
 
     #[Route('', name: 'create', methods: ['POST'])]
+    #[IsGranted('ROLE_SUPER_ADMIN')]
     public function create(Request $request): JsonResponse
     {
-        // Vérifier que l'utilisateur a au least un des rôles autorisés
-        if (!$this->isGranted('ROLE_SUPER_ADMIN') && !$this->isGranted('ROLE_RH_ADMIN')) {
-            return $this->json(['error' => 'Accès non autorisé'], 403);
-        }
         $data = json_decode($request->getContent(), true);
 
         if (!isset($data['name']) || empty($data['name'])) {
@@ -126,12 +116,9 @@ class RoleController extends AbstractController
     }
 
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
+    #[IsGranted('ROLE_SUPER_ADMIN')]
     public function update(int $id, Request $request): JsonResponse
     {
-        // Vérifier que l'utilisateur a au least un des rôles autorisés
-        if (!$this->isGranted('ROLE_SUPER_ADMIN') && !$this->isGranted('ROLE_RH_ADMIN')) {
-            return $this->json(['error' => 'Accès non autorisé'], 403);
-        }
         $role = $this->entityManager->getRepository(Role::class)->find($id);
         
         if (!$role) {
@@ -149,6 +136,10 @@ class RoleController extends AbstractController
                 return $this->json(['error' => 'Ce nom de rôle existe déjà'], 400);
             }
             
+            if ($role->getName() !== $data['name'] && in_array($role->getName(), \App\Security\PermissionCatalog::SYSTEM_ROLES, true)) {
+                return $this->json(['error' => 'Le nom d\'un rôle système ne peut pas être modifié'], 400);
+            }
+
             $role->setName($data['name']);
         }
 
@@ -180,16 +171,18 @@ class RoleController extends AbstractController
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
+    #[IsGranted('ROLE_SUPER_ADMIN')]
     public function delete(int $id): JsonResponse
     {
-        // Vérifier que l'utilisateur a au least un des rôles autorisés
-        if (!$this->isGranted('ROLE_SUPER_ADMIN') && !$this->isGranted('ROLE_RH_ADMIN')) {
-            return $this->json(['error' => 'Accès non autorisé'], 403);
-        }
         $role = $this->entityManager->getRepository(Role::class)->find($id);
         
         if (!$role) {
             return $this->json(['error' => 'Rôle non trouvé'], 404);
+        }
+
+        // Les 4 rôles de base sont indispensables au fonctionnement de l'application.
+        if (in_array($role->getName(), \App\Security\PermissionCatalog::SYSTEM_ROLES, true)) {
+            return $this->json(['error' => 'Ce rôle système ne peut pas être supprimé'], 400);
         }
 
         // Vérifier que le rôle n'est pas assigné à des utilisateurs
@@ -207,12 +200,9 @@ class RoleController extends AbstractController
     }
 
     #[Route('/{id}/permissions', name: 'update_permissions', methods: ['PUT'])]
+    #[IsGranted('ROLE_SUPER_ADMIN')]
     public function updatePermissions(int $id, Request $request): JsonResponse
     {
-        // Vérifier que l'utilisateur a au least un des rôles autorisés
-        if (!$this->isGranted('ROLE_SUPER_ADMIN') && !$this->isGranted('ROLE_RH_ADMIN')) {
-            return $this->json(['error' => 'Accès non autorisé'], 403);
-        }
         $role = $this->entityManager->getRepository(Role::class)->find($id);
         
         if (!$role) {

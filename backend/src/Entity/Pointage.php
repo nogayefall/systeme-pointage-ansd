@@ -6,8 +6,13 @@ use App\Repository\PointageRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PointageRepository::class)]
+#[ORM\Index(name: 'idx_pointage_datetime', columns: ['date_time'])]
 class Pointage
 {
+    public const BUILDING_SIEGE = 'SIEGE';
+    public const BUILDING_ANNEXE = 'ANNEXE';
+    public const BUILDINGS = [self::BUILDING_SIEGE, self::BUILDING_ANNEXE];
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -22,13 +27,17 @@ class Pointage
     private ?User $agentSecurity = null;
 
     #[ORM\Column(length: 20)]
-    private ?string $type = null; // 'ARRIVEE' ou 'DEPART'
+    private ?string $type = null; // 'ENTRY' (arrivée) ou 'EXIT' (départ)
 
     #[ORM\Column]
     private ?\DateTimeImmutable $dateTime = null;
 
     #[ORM\Column(length: 20)]
-    private ?string $method = null; // 'BARCODE' ou 'MANUAL'
+    private ?string $method = null; // 'BARCODE' (lecteur de code-barres) ou 'MANUAL'
+
+    /** Bâtiment où le pointage a été enregistré. */
+    #[ORM\Column(length: 10, options: ['default' => 'SIEGE'])]
+    private string $building = self::BUILDING_SIEGE;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $notes = null;
@@ -102,6 +111,18 @@ class Pointage
     public function setMethod(string $method): static
     {
         $this->method = $method;
+
+        return $this;
+    }
+
+    public function getBuilding(): string
+    {
+        return $this->building;
+    }
+
+    public function setBuilding(string $building): static
+    {
+        $this->building = $building;
 
         return $this;
     }

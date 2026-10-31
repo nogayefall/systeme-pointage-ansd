@@ -3,6 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\User;
+use App\Security\LoginThrottler;
 use App\Service\AuthService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -16,100 +17,94 @@ class AuthController extends AbstractController
 {
     public function __construct(
         private AuthService $authService,
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
+        private LoginThrottler $throttler
     ) {}
 
     #[Route('/login', name: 'login', methods: ['POST'])]
     public function login(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
-
-        if ((!isset($data['email']) && !isset($data['matricule'])) || !isset($data['password'])) {
-            return $this->json([
-                'error' => 'Identifiant (email ou matricule) et mot de passe requis'
-            ], Response::HTTP_BAD_REQUEST);
+        if (!is_array($data)) {
+            return $this->json(['error' => 'Requête invalide'], Response::HTTP_BAD_REQUEST);
         }
 
-        if (isset($data['matricule'])) {
-            $user = $this->authService->authenticateByMatricule($data['matricule'], $data['password']);
-        } else {
-            $user = $this->authService->authenticate($data['email'], $data['password']);
+        $identifier = trim((string) ($data['matricule'] ?? $data['email'] ?? ''));
+        $password = (string) ($data['password'] ?? '');
+
+        if ($identifier === '' || $password === '') {
+            return $this->json(['error' => 'Identifiant (email ou matricule) et mot de passe requis'], Response::HTTP_BAD_REQUEST);
         }
+
+        $ip = (string) $request->getClientIp();
+
+        if ($this->throttler->isLocked($ip, $identifier)) {
+            return $this->json(
+                ['error' => 'Trop de tentatives échouées. Réessayez dans quelques minutes.'],
+                Response::HTTP_TOO_MANY_REQUESTS
+            );
+        }
+
+        $user = isset($data['matricule'])
+            ? $this->authService->authenticateByMatricule($identifier, $password)
+            : $this->authService->authenticate($identifier, $password);
 
         if (!$user) {
-            return $this->json([
-                'error' => 'Identifiants invalides'
-            ], Response::HTTP_UNAUTHORIZED);
+            $this->throttler->registerFailure($ip, $identifier);
+
+            return $this->json(['error' => 'Identifiants invalides'], Response::HTTP_UNAUTHORIZED);
         }
 
-        // ⚠️ Générer le token SEULEMENT si inexistant
-        if (!$user->getApiToken()) {
-            $user->generateApiToken();
-            $this->entityManager->flush();
-        }
+        $this->throttler->reset($ip, $identifier);
 
-        // Récupérer les permissions
-        $permissions = [];
-        if ($user->getRole()) {
-            foreach ($user->getRole()->getPermissions() as $permission) {
-                $permissions[] = $permission->getName();
-            }
-        }
+        // Nouveau jeton à chaque connexion ; seule son empreinte est conservée.
+        $token = $user->issueApiToken();
+        $this->entityManager->flush();
 
         return $this->json([
-            'token' => $user->getApiToken(),
-            'user' => [
-                'id' => $user->getId(),
-                'email' => $user->getEmail(),
-                'matricule' => $user->getMatricule(),
-                'nom' => $user->getNom(),
-                'prenom' => $user->getPrenom(),
-                'role' => $user->getRole()?->getName(),
-                'roles' => $user->getRoles(),
-                'permissions' => $permissions,
-            ]
-        ], Response::HTTP_OK);
+            'token' => $token,
+            'expiresAt' => $user->getApiTokenExpiresAt()?->format(\DATE_ATOM),
+            'user' => $this->userPayload($user),
+        ]);
     }
 
     #[Route('/me', name: 'me', methods: ['GET'])]
     public function me(): JsonResponse
     {
+        /** @var User $user */
         $user = $this->getUser();
 
-        if (!$user) {
-            return $this->json(['error' => 'Non authentifié'], Response::HTTP_UNAUTHORIZED);
-        }
+        return $this->json($this->userPayload($user));
+    }
 
+    #[Route('/logout', name: 'logout', methods: ['POST'])]
+    public function logout(): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $user->revokeApiToken();
+        $this->entityManager->flush();
+
+        return $this->json(['message' => 'Déconnecté avec succès']);
+    }
+
+    private function userPayload(User $user): array
+    {
         $permissions = [];
-        if ($user->getRole()) {
-            foreach ($user->getRole()->getPermissions() as $permission) {
-                $permissions[] = $permission->getName();
-            }
+        foreach ($user->getRole()?->getPermissions() ?? [] as $permission) {
+            $permissions[] = $permission->getName();
         }
 
-        return $this->json([
+        return [
             'id' => $user->getId(),
             'email' => $user->getEmail(),
             'matricule' => $user->getMatricule(),
             'nom' => $user->getNom(),
             'prenom' => $user->getPrenom(),
             'role' => $user->getRole()?->getName(),
-            'roles' => $user->getRoles(),
+            'department' => $user->getDepartment()?->getName(),
+            'roles' => array_values($user->getRoles()),
             'permissions' => $permissions,
-        ]);
-    }
-
-    #[Route('/logout', name: 'logout', methods: ['POST'])]
-    public function logout(): JsonResponse
-    {
-        $user = $this->getUser();
-
-        if ($user) {
-            // Invalider le token
-            $user->setApiToken(null);
-            $this->entityManager->flush();
-        }
-
-        return $this->json(['message' => 'Déconnecté avec succès']);
+        ];
     }
 }

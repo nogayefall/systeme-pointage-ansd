@@ -50,9 +50,8 @@ class LeaveRequestRepository extends ServiceEntityRepository
         foreach ($leaves as $leave) {
             $s = max($start->format('Y-m-d'), $leave->getStartDate()->format('Y-m-d'));
             $e = min($end->format('Y-m-d'), $leave->getEndDate()->format('Y-m-d'));
-            $ds = new \DateTime($s);
-            $de = new \DateTime($e);
-            $days += (int)$de->diff($ds)->format('%a') + 1;
+            // Seuls les jours ouvrés comptent comme jours de congé.
+            $days += \App\Service\WorkSchedule::workingDaysBetween(new \DateTime($s), new \DateTime($e));
         }
 
         return $days;

@@ -1,96 +1,41 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { authApi, session, AUTH_EXPIRED_EVENT } from '../services/api';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => (session.getToken() ? session.getUser() : null));
+  const [expired, setExpired] = useState(false);
 
-  // Vérifier l'authentification au chargement
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      const savedUser = localStorage.getItem('user');
-
-      if (token && savedUser) {
-        try {
-          const response = await authAPI.me();
-          setUser(response.data);
-        } catch (err) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-        }
-      }
-      setLoading(false);
+    const onExpired = () => {
+      setUser(null);
+      setExpired(true);
     };
-
-    checkAuth();
+    window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
   }, []);
 
-  const login = async (email, password) => {
-    try {
-      setError(null);
-      const response = await authAPI.login(email, password);
-      const { token, user: userData } = response.data;
+  const login = useCallback(async (identifier, password) => {
+    const data = await authApi.login(identifier.trim(), password);
+    session.save(data.token, data.user);
+    setExpired(false);
+    setUser(data.user);
+    return data.user;
+  }, []);
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
+  const logout = useCallback(async () => {
+    try { await authApi.logout(); } catch { /* le jeton est de toute façon effacé ici */ }
+    session.clear();
+    setUser(null);
+  }, []);
 
-      return userData;
-    } catch (err) {
-      const message = err.response?.data?.error || 'Erreur de connexion';
-      setError(message);
-      throw err;
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await authAPI.logout();
-    } catch (err) {
-      console.error('Erreur lors de la déconnexion:', err);
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setUser(null);
-    }
-  };
-
-  // Vérifier si l'utilisateur a une permission
-  const hasPermission = (permissionName) => {
-    if (!user) return false;
-    return user?.permissions?.includes(permissionName) || false;
-  };
-
-  const value = {
-    user,
-    loading,
-    error,
-    login,
-    logout,
-    isAuthenticated: !!user,
-    isSuperAdmin: user?.roles?.includes('ROLE_SUPER_ADMIN'),
-    isSecurityAgent: user?.roles?.includes('ROLE_SECURITY_AGENT'),
-    isRHAdmin: user?.roles?.includes('ROLE_RH_ADMIN'),
-    hasPermission,
-    getUserRole: () => {
-      if (user?.roles?.includes('ROLE_SUPER_ADMIN')) return 'SUPER_ADMIN';
-      if (user?.roles?.includes('ROLE_SECURITY_AGENT')) return 'SECURITY_AGENT';
-      if (user?.roles?.includes('ROLE_RH_ADMIN')) return 'RH_ADMIN';
-      return 'AGENT';
-    },
-  };
-
+  const value = useMemo(() => ({ user, login, logout, expired }), [user, login, logout, expired]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+}
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth doit être utilisé dans <AuthProvider>');
+  return ctx;
 };

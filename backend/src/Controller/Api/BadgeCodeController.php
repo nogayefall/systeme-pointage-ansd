@@ -23,13 +23,13 @@ class BadgeCodeController extends AbstractController
     #[Route('', name: 'list', methods: ['GET'])]
     public function list(Request $request): JsonResponse
     {
-        $page = $request->query->getInt('page', 1);
-        $limit = $request->query->getInt('limit', 20);
+        $page = max(1, $request->query->getInt('page', 1));
+        $limit = max(1, min(100, $request->query->getInt('limit', 20)));
         $offset = ($page - 1) * $limit;
 
         $repo = $this->entityManager->getRepository(BadgeCode::class);
         $badgeCodes = $repo->findBy([], ['id' => 'DESC'], $limit, $offset);
-        $total = count($repo->findAll());
+        $total = $repo->count([]);
 
         $data = array_map(function (BadgeCode $code) {
             return [

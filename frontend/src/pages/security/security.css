@@ -1,0 +1,15 @@
+@import '../admin/admin.css';
+.scan-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-6); align-items: start; }
+.scanner { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); text-align: center; padding: var(--sp-8) var(--sp-4); border: 2px dashed var(--line-strong); border-radius: var(--radius-lg); background: var(--blue-50); }
+.scanner.is-busy { border-color: var(--navy-700); }
+.scanner-icon { display: inline-flex; padding: 16px; border-radius: 50%; background: var(--navy-700); color: var(--cyan-300); }
+.scan-mode { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-4); }
+.scan-result { display: flex; gap: var(--sp-4); align-items: center; padding: var(--sp-5); border-radius: var(--radius-lg); font-size: var(--text-md); }
+.scan-result strong { font-size: var(--text-lg); }
+.scan-result.is-ok { background: var(--success-bg); color: var(--success); }
+.scan-result.is-error { background: var(--danger-bg); color: var(--danger); }
+.manual { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-3); align-items: end; }
+.feed.scroll { max-height: 640px; overflow-y: auto; }
+@media (max-width: 1000px) { .scan-grid { grid-template-columns: 1fr; } }
+.scan-warn { margin-top: 4px; font-size: var(--text-sm); font-weight: 600; }
+.scan-mode + .scan-mode { margin-top: var(--sp-3); }

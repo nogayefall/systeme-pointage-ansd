@@ -40,11 +40,38 @@ class LeaveRequestController extends AbstractController
             return $this->json(['error' => 'startDate doit être antérieur ou égal à endDate'], Response::HTTP_BAD_REQUEST);
         }
 
+        if ($end < new \DateTime('today')) {
+            return $this->json(['error' => 'La période demandée est déjà passée'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $reason = isset($data['reason']) ? trim((string) $data['reason']) : null;
+        if ($reason !== null && mb_strlen($reason) > 255) {
+            return $this->json(['error' => 'Le motif ne doit pas dépasser 255 caractères'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Pas de chevauchement avec une autre demande en attente ou approuvée.
+        $overlap = $this->leaveRepo->createQueryBuilder('l')
+            ->select('COUNT(l.id)')
+            ->where('l.user = :user')
+            ->andWhere('l.status IN (:statuses)')
+            ->andWhere('l.startDate <= :end')
+            ->andWhere('l.endDate >= :start')
+            ->setParameter('user', $user)
+            ->setParameter('statuses', ['PENDING', 'APPROVED'])
+            ->setParameter('start', $start->format('Y-m-d'))
+            ->setParameter('end', $end->format('Y-m-d'))
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        if ((int) $overlap > 0) {
+            return $this->json(['error' => 'Une demande existe déjà sur cette période'], Response::HTTP_CONFLICT);
+        }
+
         $leave = new LeaveRequest();
         $leave->setUser($user);
         $leave->setStartDate($start);
         $leave->setEndDate($end);
-        $leave->setReason($data['reason'] ?? null);
+        $leave->setReason($reason !== '' ? $reason : null);
         $leave->setStatus('PENDING');
 
         $this->entityManager->persist($leave);
@@ -82,22 +109,24 @@ class LeaveRequestController extends AbstractController
                 'approvedBy' => $approvedBy?->getMatricule(),
                 'approvedByName' => $approvedBy ? trim(($approvedBy->getPrenom() ?? '') . ' ' . ($approvedBy->getNom() ?? '')) : null,
                 'approvedAt' => $l->getApprovedAt()?->format('Y-m-d H:i:s'),
+                'createdAt' => $l->getCreatedAt()?->format('Y-m-d H:i:s'),
             ];
         }
 
         return $this->json(['success' => true, 'data' => $data]);
     }
 
-    #[Route('/{id}/approve', name: 'approve', methods: ['POST'])]
+    #[Route('/{id}/approve', name: 'approve', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[IsGranted('ROLE_RH_ADMIN')]
     public function approve(int $id): JsonResponse
     {
-        // allow both RH admins and Super Admins to approve
-        if (!($this->isGranted('ROLE_RH_ADMIN') || $this->isGranted('ROLE_SUPER_ADMIN'))) {
-            return $this->json(['error' => 'Forbidden'], Response::HTTP_FORBIDDEN);
-        }
         $leave = $this->entityManager->getRepository(LeaveRequest::class)->find($id);
         if (!$leave) {
             return $this->json(['error' => 'Demande non trouvée'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($leave->getStatus() !== 'PENDING') {
+            return $this->json(['error' => 'Cette demande a déjà été traitée'], Response::HTTP_CONFLICT);
         }
 
         $leave->setStatus('APPROVED');
@@ -109,16 +138,17 @@ class LeaveRequestController extends AbstractController
         return $this->json(['success' => true, 'message' => 'Demande approuvée']);
     }
 
-    #[Route('/{id}/reject', name: 'reject', methods: ['POST'])]
+    #[Route('/{id}/reject', name: 'reject', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[IsGranted('ROLE_RH_ADMIN')]
     public function reject(int $id, Request $request): JsonResponse
     {
-        // allow both RH admins and Super Admins to reject
-        if (!($this->isGranted('ROLE_RH_ADMIN') || $this->isGranted('ROLE_SUPER_ADMIN'))) {
-            return $this->json(['error' => 'Forbidden'], Response::HTTP_FORBIDDEN);
-        }
         $leave = $this->entityManager->getRepository(LeaveRequest::class)->find($id);
         if (!$leave) {
             return $this->json(['error' => 'Demande non trouvée'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($leave->getStatus() !== 'PENDING') {
+            return $this->json(['error' => 'Cette demande a déjà été traitée'], Response::HTTP_CONFLICT);
         }
 
         $leave->setStatus('REJECTED');
@@ -128,5 +158,25 @@ class LeaveRequestController extends AbstractController
         $this->entityManager->flush();
 
         return $this->json(['success' => true, 'message' => 'Demande rejetée']);
+    }
+
+    #[Route('/{id}/cancel', name: 'cancel', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[IsGranted('ROLE_AGENT')]
+    public function cancel(int $id): JsonResponse
+    {
+        $leave = $this->leaveRepo->find($id);
+
+        if (!$leave || $leave->getUser()?->getId() !== $this->getUser()?->getId()) {
+            return $this->json(['error' => 'Demande non trouvée'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($leave->getStatus() !== 'PENDING') {
+            return $this->json(['error' => 'Seule une demande en attente peut être annulée'], Response::HTTP_CONFLICT);
+        }
+
+        $leave->setStatus('CANCELLED');
+        $this->entityManager->flush();
+
+        return $this->json(['success' => true, 'message' => 'Demande annulée']);
     }
 }

@@ -3,307 +3,261 @@
 namespace App\Controller\Api;
 
 use App\Entity\Pointage;
-use App\Entity\User;
+use App\Service\AgentDirectory;
+use App\Service\AttendanceCalculator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+/**
+ * Rapports. Réservés à la RH (tous les employés) et aux supérieurs (leur équipe).
+ * Filtres communs : dateStart, dateEnd (AAAA-MM-JJ), departmentId (<id>|none).
+ */
 #[Route('/api/reports', name: 'api_reports_')]
+#[IsGranted(new Expression('is_granted("ROLE_RH_ADMIN") or is_granted("ROLE_SUPERVISOR")'))]
 class ReportController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $entityManager) {}
+    private const MAX_DAYS = 366;
+    private const MAX_ROWS = 5000;
 
-    /**
-     * Rapport: Pointages filtrés par période
-     * GET /api/reports/pointages?dateStart=2026-01-01&dateEnd=2026-01-31&agentId=5&type=ENTRY
-     */
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+        private AgentDirectory $directory,
+        private AttendanceCalculator $calculator,
+    ) {
+    }
+
+    /** Liste brute des pointages. */
     #[Route('/pointages', name: 'list_pointages', methods: ['GET'])]
     public function listPointages(Request $request): JsonResponse
     {
-        // Vérifier l'accès
-        if (!$this->isGranted('ROLE_SUPER_ADMIN') && !$this->isGranted('ROLE_RH_ADMIN')) {
-            return $this->json(['error' => 'Accès non autorisé'], 403);
+        [$start, $end, $error] = $this->period($request);
+        if ($error) {
+            return $error;
         }
 
-        $dateStart = $request->query->get('dateStart');
-        $dateEnd = $request->query->get('dateEnd');
-        $agentId = $request->query->getInt('agentId', 0);
-        $type = $request->query->get('type'); // ENTRY, EXIT, ou null pour tous
-
-        // Valider les dates
-        try {
-            $startDate = $dateStart ? new \DateTime($dateStart) : (new \DateTime())->modify('-30 days');
-            $endDate = $dateEnd ? new \DateTime($dateEnd) : new \DateTime();
-        } catch (\Exception $e) {
-            return $this->json(['error' => 'Format de date invalide'], 400);
+        $agents = $this->scopedAgents($request);
+        if (!$agents) {
+            return $this->json(['success' => true, 'data' => [], 'count' => 0]);
         }
 
-        $startDate->setTime(0, 0, 0);
-        $endDate->setTime(23, 59, 59);
+        $qb = $this->entityManager->createQueryBuilder()
+            ->select('p')->from(Pointage::class, 'p')
+            ->where('p.agent IN (:agents)')
+            ->andWhere('p.dateTime >= :start')->andWhere('p.dateTime <= :end')
+            ->setParameter('agents', $agents)
+            ->setParameter('start', $start->setTime(0, 0))
+            ->setParameter('end', $end->setTime(23, 59, 59))
+            ->orderBy('p.dateTime', 'DESC')
+            ->setMaxResults(self::MAX_ROWS);
 
-        $pointageRepo = $this->entityManager->getRepository(Pointage::class);
-        
-        $qb = $pointageRepo->createQueryBuilder('p')
-            ->where('p.dateTime >= :start')
-            ->andWhere('p.dateTime <= :end')
-            ->setParameter('start', $startDate)
-            ->setParameter('end', $endDate);
-
-        if ($agentId > 0) {
-            $qb->andWhere('p.agent = :agentId')
-                ->setParameter('agentId', $agentId);
+        if (in_array($type = $request->query->get('type'), ['ENTRY', 'EXIT'], true)) {
+            $qb->andWhere('p.type = :type')->setParameter('type', $type);
         }
-
-        if ($type) {
-            $qb->andWhere('p.type = :type')
-                ->setParameter('type', $type);
+        if (in_array($building = $request->query->get('building'), Pointage::BUILDINGS, true)) {
+            $qb->andWhere('p.building = :building')->setParameter('building', $building);
         }
-
-        $pointages = $qb->orderBy('p.dateTime', 'DESC')->getQuery()->getResult();
 
         $data = [];
-        foreach ($pointages as $pointage) {
+        foreach ($qb->getQuery()->getResult() as $p) {
             $data[] = [
-                'id' => $pointage->getId(),
-                'agent' => [
-                    'id' => $pointage->getAgent()?->getId(),
-                    'matricule' => $pointage->getAgent()?->getMatricule(),
-                    'nom' => $pointage->getAgent()?->getNom(),
-                    'prenom' => $pointage->getAgent()?->getPrenom(),
-                ],
-                'securityOfficer' => [
-                    'nom' => $pointage->getAgentSecurity()?->getNom(),
-                    'prenom' => $pointage->getAgentSecurity()?->getPrenom(),
-                ],
-                'type' => $pointage->getType(),
-                'method' => $pointage->getMethod(),
-                'datetime' => $pointage->getDateTime()?->format('Y-m-d H:i:s'),
+                'id' => $p->getId(),
+                'agent' => AgentDirectory::userPayload($p->getAgent()),
+                'type' => $p->getType(),
+                'method' => $p->getMethod(),
+                'building' => $p->getBuilding(),
+                'datetime' => $p->getDateTime()->format('Y-m-d H:i:s'),
             ];
         }
 
-        return $this->json([
-            'success' => true,
-            'data' => $data,
-            'count' => count($data),
-            'filters' => [
-                'dateStart' => $startDate->format('Y-m-d'),
-                'dateEnd' => $endDate->format('Y-m-d'),
-                'agentId' => $agentId,
-                'type' => $type,
-            ],
-        ]);
+        return $this->json(['success' => true, 'data' => $data, 'count' => count($data)]);
+    }
+
+    /** Détail journalier : une ligne par employé et par jour (heures normales / supplémentaires / statut). */
+    #[Route('/daily', name: 'daily', methods: ['GET'])]
+    public function daily(Request $request): JsonResponse
+    {
+        [$start, $end, $error] = $this->period($request);
+        if ($error) {
+            return $error;
+        }
+
+        $rows = [];
+        foreach ($this->calculator->compute($this->scopedAgents($request), $start, $end) as $row) {
+            foreach ($row['days'] as $day) {
+                $rows[] = ['agent' => AgentDirectory::userPayload($row['agent'])] + $day;
+            }
+        }
+        usort($rows, static fn ($a, $b) => [$b['date'], $a['agent']['nom']] <=> [$a['date'], $b['agent']['nom']]);
+
+        return $this->json(['success' => true, 'data' => array_slice($rows, 0, self::MAX_ROWS), 'count' => count($rows)]);
     }
 
     /**
-     * Rapport: Assiduité des agents
-     * GET /api/reports/attendance?dateStart=2026-01-01&dateEnd=2026-01-31
+     * Synthèse par agent, par service ou par bâtiment (?groupBy=agent|department|building).
+     * Heures normales, heures supplémentaires, retards, absences et congés.
      */
     #[Route('/attendance', name: 'attendance', methods: ['GET'])]
     public function attendance(Request $request): JsonResponse
     {
-        if (!$this->isGranted('ROLE_SUPER_ADMIN') && !$this->isGranted('ROLE_RH_ADMIN')) {
-            return $this->json(['error' => 'Accès non autorisé'], 403);
+        [$start, $end, $error] = $this->period($request);
+        if ($error) {
+            return $error;
+        }
+        $groupBy = $request->query->get('groupBy', 'agent');
+        if (!in_array($groupBy, ['agent', 'department', 'building'], true)) {
+            return $this->json(['error' => 'Regroupement invalide'], 400);
         }
 
-        $dateStart = $request->query->get('dateStart');
-        $dateEnd = $request->query->get('dateEnd');
+        $groups = [];
+        $blank = static fn (string $label, array $extra = []) => $extra + [
+            'label' => $label, 'agents' => 0, 'daysExpected' => 0, 'daysWorked' => 0, 'daysLate' => 0, 'daysAbsent' => 0,
+            'daysLeave' => 0, 'workedMinutes' => 0, 'normalMinutes' => 0, 'overtimeMinutes' => 0,
+        ];
 
-        try {
-            $startDate = $dateStart ? new \DateTime($dateStart) : (new \DateTime())->modify('-30 days');
-            $endDate = $dateEnd ? new \DateTime($dateEnd) : new \DateTime();
-        } catch (\Exception $e) {
-            return $this->json(['error' => 'Format de date invalide'], 400);
-        }
-
-        $startDate->setTime(0, 0, 0);
-        $endDate->setTime(23, 59, 59);
-
-        // Récupérer tous les agents (role = "Agent")
-        $roleRepo = $this->entityManager->getRepository(\App\Entity\Role::class);
-        $agentRole = $roleRepo->findOneBy(['name' => 'Agent']);
-        
-        $agents = [];
-        if ($agentRole) {
-            $agents = $this->entityManager->getRepository(User::class)
-                ->findBy(['role' => $agentRole], ['matricule' => 'ASC']);
-        }
-
-        $pointageRepo = $this->entityManager->getRepository(Pointage::class);
-        
-        $data = [];
-        foreach ($agents as $agent) {
-            $pointages = $pointageRepo->createQueryBuilder('p')
-                ->where('p.agent = :agent')
-                ->andWhere('p.dateTime >= :start')
-                ->andWhere('p.dateTime <= :end')
-                ->setParameter('agent', $agent)
-                ->setParameter('start', $startDate)
-                ->setParameter('end', $endDate)
-                ->orderBy('p.dateTime', 'ASC')
-                ->getQuery()
-                ->getResult();
-
-            // Calculer les statistiques
-            $daysInPeriod = (int)$endDate->diff($startDate)->format('%a') + 1;
-            $pointageDates = [];
-            foreach ($pointages as $pointage) {
-                $date = $pointage->getDateTime()->format('Y-m-d');
-                if (!isset($pointageDates[$date])) {
-                    $pointageDates[$date] = [];
-                }
-                $pointageDates[$date][] = $pointage->getType();
-            }
-
-            $daysWorked = count($pointageDates);
-            $daysAbsent = $daysInPeriod - $daysWorked;
-            $lateArrivals = 0;
-
-            foreach ($pointages as $pointage) {
-                if ($pointage->getType() === 'ENTRY') {
-                    $hour = (int)$pointage->getDateTime()->format('H');
-                    if ($hour > 8) {
-                        $lateArrivals++;
+        foreach ($this->calculator->compute($this->scopedAgents($request), $start, $end) as $row) {
+            $agent = $row['agent'];
+            if ($groupBy === 'building') {
+                // Un jour est rattaché au bâtiment de la première arrivée ; absences et congés n'ont pas de bâtiment.
+                foreach ($row['days'] as $day) {
+                    if (!$day['building']) {
+                        continue;
                     }
+                    $g = &$groups[$day['building']];
+                    $g ??= $blank($day['building'] === 'SIEGE' ? 'Siège' : 'Annexe', ['key' => $day['building']]);
+                    $g['workedMinutes'] += $day['workedMinutes'];
+                    $g['normalMinutes'] += $day['normalMinutes'];
+                    $g['overtimeMinutes'] += $day['overtimeMinutes'];
+                    $g['daysWorked'] += $day['working'] ? 1 : 0;
+                    $g['daysLate'] += $day['status'] === 'LATE' ? 1 : 0;
+                    unset($g);
                 }
+                continue;
             }
 
-            $attendanceRate = $daysInPeriod > 0 ? round(($daysWorked / $daysInPeriod) * 100, 2) : 0;
-
-            $data[] = [
-                'id' => $agent->getId(),
-                'matricule' => $agent->getMatricule(),
-                'nom' => $agent->getNom(),
-                'prenom' => $agent->getPrenom(),
-                'daysInPeriod' => $daysInPeriod,
-                'daysWorked' => $daysWorked,
-                'daysAbsent' => $daysAbsent,
-                'lateArrivals' => $lateArrivals,
-                'attendanceRate' => $attendanceRate,
-            ];
+            if ($groupBy === 'department') {
+                $key = (string) ($agent->getDepartment()?->getId() ?? 'none');
+                $label = $agent->getDepartment()?->getName() ?? 'Sans service';
+            } else {
+                $key = (string) $agent->getId();
+                $label = trim($agent->getPrenom() . ' ' . $agent->getNom());
+            }
+            $g = &$groups[$key];
+            $g ??= $blank($label, ['key' => $key] + ($groupBy === 'agent' ? ['matricule' => $agent->getMatricule()] : []));
+            $g['agents']++;
+            foreach (['daysExpected', 'daysWorked', 'daysLate', 'daysAbsent', 'daysLeave', 'workedMinutes', 'normalMinutes', 'overtimeMinutes'] as $f) {
+                $g[$f] += $row['totals'][$f];
+            }
+            unset($g);
         }
+
+        $data = array_values($groups);
+        foreach ($data as &$g) {
+            $g['attendanceRate'] = $g['daysExpected'] > 0 ? round(100 * $g['daysWorked'] / $g['daysExpected'], 1) : null;
+        }
+        unset($g);
+        usort($data, static fn ($a, $b) => strcmp($a['label'], $b['label']));
 
         return $this->json([
             'success' => true,
+            'groupBy' => $groupBy,
             'data' => $data,
-            'period' => [
-                'start' => $startDate->format('Y-m-d'),
-                'end' => $endDate->format('Y-m-d'),
-            ],
+            'period' => ['start' => $start->format('Y-m-d'), 'end' => $end->format('Y-m-d')],
         ]);
     }
 
     /**
-     * Rapport: Anomalies (agents sans pointage, pointages en doublon, etc.)
-     * GET /api/reports/anomalies?date=2026-01-27
+     * Anomalies à traiter par la RH :
+     *  MISSING_EXIT  arrivée sans départ (oubli de pointer en partant)
+     *  MISSING_ENTRY départ sans arrivée
+     *  ABSENT        jour ouvré sans aucun pointage ni congé approuvé (l'agent est considéré absent ; justificatif à demander)
      */
     #[Route('/anomalies', name: 'anomalies', methods: ['GET'])]
     public function anomalies(Request $request): JsonResponse
     {
-        if (!$this->isGranted('ROLE_SUPER_ADMIN') && !$this->isGranted('ROLE_RH_ADMIN')) {
-            return $this->json(['error' => 'Accès non autorisé'], 403);
+        [$start, $end, $error] = $this->period($request, 14);
+        if ($error) {
+            return $error;
         }
+        $filter = $request->query->get('type');
 
-        $date = $request->query->get('date', (new \DateTime())->format('Y-m-d'));
-        
-        try {
-            $targetDate = new \DateTime($date);
-        } catch (\Exception $e) {
-            return $this->json(['error' => 'Format de date invalide'], 400);
-        }
-
-        $startDate = clone $targetDate;
-        $startDate->setTime(0, 0, 0);
-        $endDate = clone $targetDate;
-        $endDate->setTime(23, 59, 59);
-
-        // Agents sans pointage du jour
-        $roleRepo = $this->entityManager->getRepository(\App\Entity\Role::class);
-        $agentRole = $roleRepo->findOneBy(['name' => 'Agent']);
-        
-        $allAgents = [];
-        if ($agentRole) {
-            $allAgents = $this->entityManager->getRepository(User::class)
-                ->findBy(['role' => $agentRole, 'isActive' => true]);
-        }
-
-        $pointageRepo = $this->entityManager->getRepository(Pointage::class);
-        
-        $pointagesToday = $pointageRepo->createQueryBuilder('p')
-            ->where('p.dateTime >= :start')
-            ->andWhere('p.dateTime <= :end')
-            ->setParameter('start', $startDate)
-            ->setParameter('end', $endDate)
-            ->getQuery()
-            ->getResult();
-
-        $agentsWithPointage = [];
-        foreach ($pointagesToday as $pointage) {
-            $agentsWithPointage[$pointage->getAgent()->getId()] = true;
-        }
-
-        $agentsWithoutPointage = [];
-        foreach ($allAgents as $agent) {
-            if (!isset($agentsWithPointage[$agent->getId()])) {
-                $agentsWithoutPointage[] = [
-                    'id' => $agent->getId(),
-                    'matricule' => $agent->getMatricule(),
-                    'nom' => $agent->getNom(),
-                    'prenom' => $agent->getPrenom(),
+        $rows = [];
+        foreach ($this->calculator->compute($this->scopedAgents($request), $start, $end) as $row) {
+            foreach ($row['days'] as $day) {
+                $type = $day['anomaly'] ?? ($day['status'] === 'ABSENT' ? 'ABSENT' : null);
+                if ($type === null || ($filter && $filter !== $type)) {
+                    continue;
+                }
+                $rows[] = [
+                    'type' => $type,
+                    'date' => $day['date'],
+                    'agent' => AgentDirectory::userPayload($row['agent']),
+                    'first' => $day['first'],
+                    'last' => $day['last'],
+                    'building' => $day['building'],
                 ];
             }
         }
+        usort($rows, static fn ($a, $b) => [$b['date'], $a['agent']['nom']] <=> [$a['date'], $b['agent']['nom']]);
 
-        // Pointages en doublon (même agent, même type, même heure)
-        $duplicates = [];
-        $pointagesByAgent = [];
-        foreach ($pointagesToday as $pointage) {
-            $agentId = $pointage->getAgent()->getId();
-            if (!isset($pointagesByAgent[$agentId])) {
-                $pointagesByAgent[$agentId] = [];
-            }
-            $pointagesByAgent[$agentId][] = $pointage;
-        }
-
-        foreach ($pointagesByAgent as $agentId => $pointages) {
-            for ($i = 0; $i < count($pointages) - 1; $i++) {
-                $p1 = $pointages[$i];
-                $p2 = $pointages[$i + 1];
-                
-                // Si même type et peu de différence de temps (<5 min)
-                if ($p1->getType() === $p2->getType()) {
-                    $diff = $p1->getDateTime()->diff($p2->getDateTime());
-                    if ($diff->i < 5 && $diff->h === 0) {
-                        $duplicates[] = [
-                            'agent' => [
-                                'matricule' => $p1->getAgent()->getMatricule(),
-                                'nom' => $p1->getAgent()->getNom(),
-                                'prenom' => $p1->getAgent()->getPrenom(),
-                            ],
-                            'type' => $p1->getType(),
-                            'time1' => $p1->getDateTime()->format('H:i:s'),
-                            'time2' => $p2->getDateTime()->format('H:i:s'),
-                            'differenceMins' => $diff->i,
-                        ];
-                    }
-                }
-            }
-        }
+        $counts = array_count_values(array_column($rows, 'type'));
 
         return $this->json([
             'success' => true,
-            'date' => $targetDate->format('Y-m-d'),
-            'anomalies' => [
-                'agentsWithoutPointage' => $agentsWithoutPointage,
-                'duplicatePointages' => $duplicates,
-            ],
+            'data' => array_slice($rows, 0, self::MAX_ROWS),
             'summary' => [
-                'totalAgents' => count($allAgents),
-                'agentsWithPointage' => count($agentsWithPointage),
-                'agentsAbsent' => count($agentsWithoutPointage),
-                'duplicatesFound' => count($duplicates),
+                'MISSING_EXIT' => $counts['MISSING_EXIT'] ?? 0,
+                'MISSING_ENTRY' => $counts['MISSING_ENTRY'] ?? 0,
+                'ABSENT' => $counts['ABSENT'] ?? 0,
             ],
         ]);
+    }
+
+    /** @return list<\App\Entity\User> employés visibles, après filtres service et agent */
+    private function scopedAgents(Request $request): array
+    {
+        $agents = $this->directory->employees($request->query->get('departmentId'));
+        $agentId = $request->query->getInt('agentId', 0);
+        if ($agentId > 0) {
+            $agents = array_values(array_filter($agents, static fn ($a) => $a->getId() === $agentId));
+        }
+
+        return $agents;
+    }
+
+    /** @return array{0: ?\DateTimeImmutable, 1: ?\DateTimeImmutable, 2: ?JsonResponse} */
+    private function period(Request $request, int $defaultDays = 30): array
+    {
+        $today = new \DateTimeImmutable('today');
+        $values = [];
+        foreach (['dateStart' => $today->modify('-' . ($defaultDays - 1) . ' days'), 'dateEnd' => $today] as $key => $default) {
+            $raw = $request->query->get($key);
+            if ($raw === null || $raw === '') {
+                $values[] = $default;
+                continue;
+            }
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $raw)) {
+                return [null, null, $this->json(['error' => 'Format de date invalide'], 400)];
+            }
+            try {
+                $values[] = new \DateTimeImmutable((string) $raw);
+            } catch (\Exception) {
+                return [null, null, $this->json(['error' => 'Format de date invalide'], 400)];
+            }
+        }
+        [$start, $end] = $values;
+
+        if ($start > $end) {
+            return [null, null, $this->json(['error' => 'La date de début doit précéder la date de fin'], 400)];
+        }
+        if ($start->diff($end)->days > self::MAX_DAYS) {
+            return [null, null, $this->json(['error' => 'La période ne peut pas dépasser un an'], 400)];
+        }
+
+        return [$start, $end, null];
     }
 }

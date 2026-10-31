@@ -40,6 +40,21 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
+    /**
+     * Retourne l'utilisateur actif dont le jeton (en clair) est valide et non expiré.
+     */
+    public function findOneByValidApiToken(string $plainToken): ?User
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.apiToken = :hash')
+            ->andWhere('u.apiTokenExpiresAt > :now')
+            ->andWhere('u.isActive = true')
+            ->setParameter('hash', User::hashToken($plainToken))
+            ->setParameter('now', new \DateTimeImmutable())
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     public function findByEmail(string $email): ?User
     {
         return $this->findOneBy(['email' => $email]);
