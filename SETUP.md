@@ -21,7 +21,7 @@ composer install
 
 #### Configuration de la base de données
 
-Assurez-vous que MySQL est en cours d'exécution et mettez à jour le `.env` si nécessaire :
+Assurez-vous que MySQL est en cours d'exécution et configurez localement `backend/.env.local` si nécessaire. Les fichiers `.env` contenant une configuration réelle ne doivent pas être versionnés :
 
 ```bash
 cd backend

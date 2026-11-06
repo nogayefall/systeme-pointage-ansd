@@ -15,6 +15,14 @@ frontend/build/
 # Environnement
 .env
 .env.local
+**/.env
+**/.env.*
+!**/.env.example
+
+# Fichiers locaux contenant des identifiants de démonstration ou le mémoire
+**/demo-identifiants.csv
+/Memoire_Nogaye_FALL (1).pdf
+/memoire_extrait.txt
 
 # IDE
 .vscode/

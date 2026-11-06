@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Entity\Role;
-use App\Entity\Permission;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,7 +20,7 @@ class RoleController extends AbstractController
     public function list(): JsonResponse
     {
         $roles = $this->entityManager->getRepository(Role::class)->findAll();
-        
+
         $data = [];
         foreach ($roles as $role) {
             $permissions = [];
@@ -32,7 +31,7 @@ class RoleController extends AbstractController
                     'description' => $permission->getDescription(),
                 ];
             }
-            
+
             $data[] = [
                 'id' => $role->getId(),
                 'name' => $role->getName(),
@@ -52,7 +51,7 @@ class RoleController extends AbstractController
     public function show(int $id): JsonResponse
     {
         $role = $this->entityManager->getRepository(Role::class)->find($id);
-        
+
         if (!$role) {
             return $this->json(['error' => 'Rôle non trouvé'], 404);
         }
@@ -88,10 +87,9 @@ class RoleController extends AbstractController
             return $this->json(['error' => 'Le nom du rôle est obligatoire'], 400);
         }
 
-        // Vérifier si le rôle existe déjà
         $existingRole = $this->entityManager->getRepository(Role::class)
             ->findOneBy(['name' => $data['name']]);
-        
+
         if ($existingRole) {
             return $this->json(['error' => 'Ce rôle existe déjà'], 400);
         }
@@ -120,7 +118,7 @@ class RoleController extends AbstractController
     public function update(int $id, Request $request): JsonResponse
     {
         $role = $this->entityManager->getRepository(Role::class)->find($id);
-        
+
         if (!$role) {
             return $this->json(['error' => 'Rôle non trouvé'], 404);
         }
@@ -128,14 +126,13 @@ class RoleController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         if (isset($data['name']) && !empty($data['name'])) {
-            // Vérifier que le nom n'existe pas déjà
             $existingRole = $this->entityManager->getRepository(Role::class)
                 ->findOneBy(['name' => $data['name']]);
-            
+
             if ($existingRole && $existingRole->getId() !== $id) {
                 return $this->json(['error' => 'Ce nom de rôle existe déjà'], 400);
             }
-            
+
             if ($role->getName() !== $data['name'] && in_array($role->getName(), \App\Security\PermissionCatalog::SYSTEM_ROLES, true)) {
                 return $this->json(['error' => 'Le nom d\'un rôle système ne peut pas être modifié'], 400);
             }
@@ -175,17 +172,15 @@ class RoleController extends AbstractController
     public function delete(int $id): JsonResponse
     {
         $role = $this->entityManager->getRepository(Role::class)->find($id);
-        
+
         if (!$role) {
             return $this->json(['error' => 'Rôle non trouvé'], 404);
         }
 
-        // Les 4 rôles de base sont indispensables au fonctionnement de l'application.
         if (in_array($role->getName(), \App\Security\PermissionCatalog::SYSTEM_ROLES, true)) {
             return $this->json(['error' => 'Ce rôle système ne peut pas être supprimé'], 400);
         }
 
-        // Vérifier que le rôle n'est pas assigné à des utilisateurs
         if (count($role->getUsers()) > 0) {
             return $this->json(['error' => 'Ce rôle est assigné à des utilisateurs et ne peut pas être supprimé'], 400);
         }
@@ -204,7 +199,7 @@ class RoleController extends AbstractController
     public function updatePermissions(int $id, Request $request): JsonResponse
     {
         $role = $this->entityManager->getRepository(Role::class)->find($id);
-        
+
         if (!$role) {
             return $this->json(['error' => 'Rôle non trouvé'], 404);
         }
@@ -215,13 +210,11 @@ class RoleController extends AbstractController
             return $this->json(['error' => 'Le champ permissionIds est obligatoire et doit être un tableau'], 400);
         }
 
-        // Vider les permissions existantes
         foreach ($role->getPermissions() as $permission) {
             $role->removePermission($permission);
         }
 
-        // Ajouter les nouvelles permissions
-        $permissionRepository = $this->entityManager->getRepository(Permission::class);
+        $permissionRepository = $this->entityManager->getRepository(\App\Entity\Permission::class);
         foreach ($data['permissionIds'] as $permissionId) {
             $permission = $permissionRepository->find($permissionId);
             if ($permission) {

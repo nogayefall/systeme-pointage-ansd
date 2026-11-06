@@ -4,7 +4,7 @@
 Copie le contenu de ce dossier par-dessus ton projet (les chemins sont les mêmes : `config/`, `migrations/`, `src/`).
 
 ## 2. Supprimer 3 fichiers devenus inutiles
-- `src/Controller/Api/RoleController.php`  (doublon de `src/Controller/RoleController.php`, mêmes routes `/api/roles`)
+- `src/Controller/Api/RoleController.php` (doublon de `src/Controller/RoleController.php`, mêmes routes `/api/roles`)
 - `src/Command/InitPermissionsCommand.php` (remplacée par `app:init-roles`, qui utilise une seule convention de noms)
 - `src/Command/CreateSecurityAgentCommand.php` (mot de passe `agent123` écrit en dur ; `app:seed-demo` crée les agents de sécurité)
 
@@ -30,7 +30,7 @@ php bin/console debug:router | findstr /i "api"
 ```
 Les routes ne doivent plus apparaître en double (`/api/api/...`).
 
-## À régler aussi dans `.env.local` (jamais dans `.env`, qui est versionné)
+## Configuration locale dans `.env.local` (ne jamais versionner ce fichier)
 ```
 APP_SECRET=<une longue chaîne aléatoire>
 DATABASE_URL="mysql://pointage:<mot_de_passe>@127.0.0.1:3306/mon_projet_pointage?serverVersion=9.1&charset=utf8mb4"
@@ -44,7 +44,8 @@ DATABASE_URL="mysql://pointage:<mot_de_passe>@127.0.0.1:3306/mon_projet_pointage
 - Utilisateurs : création/modification/suppression réservées au Super Administrateur ; mot de passe d'un agent généré au hasard (affiché une fois) au lieu d'être égal au matricule ; suppression refusée s'il y a un historique (désactiver à la place) ; impossible de se supprimer ou se désactiver soi-même.
 - Pointages : type et méthode validés ; alternance entrée/sortie imposée dans la journée (409 sinon) ; `suggestedType` renvoyé par `/pointages/check/{matricule}`.
 - Congés : refus des périodes passées et des chevauchements ; décision possible une seule fois ; annulation par l'agent (`POST /api/leaves/{id}/cancel`).
-- Statistiques / rapports : définition unique du retard (première arrivée de la journée après 08:30) et des jours ouvrés (lundi-vendredi) dans `WorkSchedule`.
+- Statistiques / rapports : définition unique du retard (première arrivée de la journée après 08:00) et des jours ouvrés dans `WorkSchedule`. Six jours fériés fixes sont intégrés; les fêtes mobiles restent à configurer chaque année.
+- Fuseau horaire de l'application : `Africa/Dakar`, défini dans le constructeur de `Kernel`.
 
 ## Mise à jour du 30/10/2026
 
