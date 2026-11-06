@@ -10,6 +10,8 @@ namespace App\Security;
  */
 final class PermissionCatalog
 {
+    public const SYMFONY_PERMISSION_PREFIX = 'ROLE_PERMISSION_';
+
     public const ROLE_SUPER_ADMIN = 'Super Administrateur';
     public const ROLE_RH = 'Administrateur RH';
     public const ROLE_SECURITY = 'Agent de Sécurité';
@@ -27,10 +29,13 @@ final class PermissionCatalog
         'manage_users' => 'Créer, modifier et désactiver des utilisateurs',
         'manage_roles' => 'Gérer les rôles et leurs permissions',
         'view_pointages' => 'Consulter les pointages de tous les agents',
+        'view_own_pointages' => 'Consulter son historique de pointage personnel',
         'create_pointage' => 'Enregistrer un pointage (entrée ou sortie)',
         'view_reports' => 'Consulter les rapports et statistiques',
         'export_reports' => 'Exporter les rapports (CSV, PDF)',
         'manage_leaves' => 'Approuver ou refuser les demandes de congé',
+        'request_leave' => 'Créer et annuler ses propres demandes de congé',
+        'view_own_leaves' => 'Consulter le statut et l’historique de ses demandes de congé',
         'manage_services' => 'Créer les services, choisir leur chef et y rattacher les agents',
         'view_team' => 'Consulter les pointages et statistiques de son équipe',
     ];
@@ -54,11 +59,11 @@ final class PermissionCatalog
         ],
         self::ROLE_SUPERVISOR => [
             'description' => 'Chef de service : suit les pointages et les congés de son équipe',
-            'permissions' => ['view_team'],
+            'permissions' => ['view_team', 'view_own_pointages', 'request_leave', 'view_own_leaves'],
         ],
         self::ROLE_AGENT => [
             'description' => 'Employé de l\'agence : consulte ses pointages et demande des congés',
-            'permissions' => [],
+            'permissions' => ['view_own_pointages', 'request_leave', 'view_own_leaves'],
         ],
     ];
 

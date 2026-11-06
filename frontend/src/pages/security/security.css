@@ -13,3 +13,201 @@
 @media (max-width: 1000px) { .scan-grid { grid-template-columns: 1fr; } }
 .scan-warn { margin-top: 4px; font-size: var(--text-sm); font-weight: 600; }
 .scan-mode + .scan-mode { margin-top: var(--sp-3); }
+
+.staff-content .scan-grid {
+  grid-template-columns: minmax(0, 1.28fr) minmax(280px, .92fr);
+  gap: 20px;
+}
+
+.staff-content .scanner {
+  min-height: 190px;
+  padding: 28px 20px;
+  border-color: #79d3ed;
+  border-radius: 10px;
+  background: #f0f9fd;
+}
+
+.staff-content .scanner.is-busy {
+  border-color: #00b4d8;
+}
+
+.staff-content .scanner-icon {
+  padding: 16px;
+  background: #003d7a;
+  color: #fff;
+}
+
+.staff-content .scanner strong {
+  color: #082f5c;
+  font-size: 16px;
+}
+
+.staff-content .scanner p {
+  max-width: 360px;
+  font-size: 13px;
+}
+
+.staff-content .scan-mode {
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.staff-content .scan-mode + .scan-mode {
+  margin-top: 12px;
+}
+
+.staff-content .scan-mode .segmented {
+  padding: 2px;
+  background: #e9f2f9;
+}
+
+.staff-content .segmented-item {
+  padding: 7px 12px;
+  font-size: 12px;
+}
+
+.staff-content .scan-grid > .stack {
+  gap: 18px;
+}
+
+.staff-content .manual {
+  gap: 12px;
+  align-items: start;
+}
+
+.staff-content .manual > .btn {
+  margin-top: 26px;
+}
+
+.staff-content .manual-agent {
+  position: relative;
+  min-width: 0;
+}
+
+.staff-content .manual-agent-input {
+  position: relative;
+}
+
+.staff-content .manual-agent-input > .icon {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 14px;
+  color: #58718e;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.staff-content .manual-agent-input .control {
+  padding-left: 42px;
+}
+
+.staff-content .manual-agent-results {
+  position: relative;
+  z-index: 2;
+  max-height: 220px;
+  margin-top: 6px;
+  overflow-y: auto;
+  border: 1px solid #c9d6e6;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(0, 31, 77, .18);
+}
+
+.staff-content .manual-agent-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  color: #082f5c;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.staff-content .manual-agent-option + .manual-agent-option {
+  border-top: 1px solid #edf2f7;
+}
+
+.staff-content .manual-agent-option:hover,
+.staff-content .manual-agent-option.is-active {
+  background: #eaf4fa;
+}
+
+.staff-content .manual-agent-option small {
+  flex: none;
+  color: #58718e;
+  font-size: 12px;
+}
+
+.staff-content .manual-agent-message {
+  padding: 12px 14px;
+  color: #58718e;
+  font-size: 13px;
+}
+
+.staff-content .manual-agent-selected {
+  display: block;
+  margin-top: 6px;
+  color: #58718e;
+  font-size: 12px;
+}
+
+.staff-content .manual .field-label,
+.staff-content .manual .control {
+  font-size: 13px;
+}
+
+.staff-content .manual .control {
+  height: 44px;
+}
+
+.staff-content .manual .btn {
+  height: 44px;
+  padding-inline: 16px;
+  font-size: 13px;
+}
+
+.staff-content .feed li {
+  gap: 12px;
+  padding: 13px 18px;
+  font-size: 13px;
+}
+
+.staff-content .feed .avatar {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 13px !important;
+}
+
+.staff-content .feed .person {
+  gap: 9px;
+}
+
+.staff-content .feed .person-name {
+  font-size: 13px;
+}
+
+.staff-content .feed .person-sub,
+.staff-content .feed-time,
+.staff-content .feed .badge {
+  font-size: 11px;
+}
+
+.staff-content .feed.scroll {
+  max-height: 520px;
+}
+
+@media (max-width: 760px) {
+  .staff-content .scan-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .staff-content .manual {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .staff-content .manual > .btn {
+    margin-top: 0;
+  }
+}

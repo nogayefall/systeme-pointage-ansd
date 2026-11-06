@@ -5,6 +5,7 @@ const TOKEN_KEY = 'ansd.token';
 const USER_KEY = 'ansd.user';
 
 export const AUTH_EXPIRED_EVENT = 'ansd:auth-expired';
+export const PASSWORD_CHANGE_REQUIRED_EVENT = 'ansd:password-change-required';
 
 /* Stockage de session : tolérant aux navigateurs qui bloquent le stockage. */
 export const session = {
@@ -39,6 +40,13 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 403 && error.response.data?.mustChangePassword) {
+      const user = session.getUser();
+      if (user) {
+        session.save(session.getToken(), { ...user, mustChangePassword: true });
+        window.dispatchEvent(new Event(PASSWORD_CHANGE_REQUIRED_EVENT));
+      }
+    }
     // Un 401 sur la connexion = mauvais identifiants, pas une session expirée.
     const isLogin = (error.config?.url || '').includes('/auth/login');
     if (error.response?.status === 401 && !isLogin) {
@@ -76,6 +84,7 @@ export const authApi = {
   },
   me: () => get('/auth/me'),
   logout: () => post('/auth/logout'),
+  changePassword: (newPassword, confirmPassword) => post('/auth/change-password', { newPassword, confirmPassword }),
 };
 
 export const usersApi = {

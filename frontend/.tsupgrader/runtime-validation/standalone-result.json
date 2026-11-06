@@ -1,0 +1,105 @@
+{
+  "planHash": "8411ebadd2518d62612458b6bc9152c5d8289f7c47e265d226ab80044d93ea02",
+  "phase": "standalone",
+  "recordedAtUtc": "2026-11-06T10:17:36.5150066Z",
+  "retryCount": 2,
+  "resetBaseline": false,
+  "complete": true,
+  "result": {
+    "setupSucceeded": true,
+    "setupDurationMs": 0,
+    "setupFailureOutput": null,
+    "assertions": [
+      {
+        "name": "production-build",
+        "kind": "process",
+        "verificationMethod": "exit-code",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "\r\n\u003E pointage-frontend@0.1.0 build\r\n\u003E react-scripts build\r\n\r\nCreating an optimized production build...\r\nBrowserslist: browsers data (caniuse-lite) is 11 months old. Please run:\r\n  npx update-browserslist-db@latest\r\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\r\nBrowserslist: browsers data (caniuse-lite) is 11 months old. Please run:\r\n  npx update-browserslist-db@latest\r\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\r\nBrowserslist: browsers data (caniuse-lite) is 11 months old. Please run:\r\n  npx update-browserslist-db@latest\r\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\r\nBrowserslist: browsers data (caniuse-lite) is 11 months old. Please run:\r\n  npx update-browserslist-db@latest\r\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\r\nBrowserslist: browsers data (caniuse-lite) is 11 months old. Please run:\r\n  npx update-browserslist-db@latest\r\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\r\nBrowserslist: browsers data (caniuse-lite) is 11 months old. Please run:\r\n  npx update-browserslist-db@latest\r\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\r\nBrowserslist: browsers data (caniuse-lite) is 11 months old. Please run:\r\n  npx update-browserslist-db@latest\r\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\r\nBrowserslist: browsers data (caniuse-lite) is 11 months old. Please run:\r\n  npx update-browserslist-db@latest\r\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\r\nCompiled successfully.\r\n\r\nFile sizes after gzip:\r\n\r\n  80.95 kB  build\\static\\js\\main.bbd41f2f.js\r\n  68.46 kB  build\\static\\js\\58.6c98e3d3.chunk.js\r\n  5.7 kB    build\\static\\js\\147.a74b0558.chunk.js\r\n  4.72 kB   build\\static\\css\\main.03314816.css\r\n  3.86 kB   build\\static\\js\\763.d704e986.chunk.js\r\n  3.7 kB    build\\static\\js\\528.e953d2ef.chunk.js\r\n  3.49 kB   build\\static\\js\\802.8b5c53ff.chunk.js\r\n  3.22 kB   build\\static\\js\\322.1c867c12.chunk.js\r\n  2.92 kB   build\\static\\js\\302.e6bf1a37.chunk.js\r\n  2.9 kB    build\\static\\css\\322.2ce1c059.chunk.css\r\n  2.69 kB   build\\static\\css\\802.cd00a160.chunk.css\r\n  2.09 kB   build\\static\\css\\302.c80bc157.chunk.css\r\n  2.09 kB   build\\static\\css\\511.c80bc157.chunk.css\r\n  2.09 kB   build\\static\\css\\528.c80bc157.chunk.css\r\n  2.09 kB   build\\static\\css\\614.c80bc157.chunk.css\r\n  2.09 kB   build\\static\\css\\884.c80bc157.chunk.css\r\n  2.09 kB   build\\static\\css\\891.c80bc157.chunk.css\r\n  2.09 kB   build\\static\\css\\147.c80bc157.chunk.css\r\n  2.09 kB   build\\static\\css\\274.c80bc157.chunk.css\r\n  2.09 kB   build\\static\\css\\763.c80bc157.chunk.css\r\n  2.09 kB   build\\static\\css\\768.c80bc157.chunk.css\r\n  2.03 kB   build\\static\\js\\274.57d8ed7c.chunk.js\r\n  1.83 kB   build\\static\\js\\884.811b9954.chunk.js\r\n  1.82 kB   build\\static\\js\\891.8429b74f.chunk.js\r\n  1.71 kB   build\\static\\js\\768.0e370304.chunk.js\r\n  1.68 kB   build\\static\\js\\980.90871349.chunk.js\r\n  1.65 kB   build\\static\\js\\614.2be6cc75.chunk.js\r\n  1.64 kB   build\\static\\js\\511.e91886fb.chunk.js\r\n  1.53 kB   build\\static\\css\\946.41f6549e.chunk.css\r\n  1.53 kB   build\\static\\css\\980.41f6549e.chunk.css\r\n  1.02 kB   build\\static\\js\\946.35840a94.chunk.js\r\n\r\nThe project was built assuming it is hosted at /.\r\nYou can control this with the homepage field in your package.json.\r\n\r\nThe build folder is ready to be deployed.\r\nYou may serve it with a static server:\r\n\r\n  npm install -g serve\r\n  serve -s build\r\n\r\nFind out more about deployment here:\r\n\r\n  https://cra.link/deployment\r\n\r\n",
+        "durationMs": 79753
+      },
+      {
+        "name": "tests-pass",
+        "kind": "process",
+        "verificationMethod": "test-results",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": 0,
+        "outputSample": "\r\n\u003E pointage-frontend@0.1.0 test\r\n\u003E react-scripts test --watchAll=false --runInBand\r\n\r\nPASS src/pages/auth/PasswordChangePage.test.js\r\n  PasswordChangePage\r\n    \u221A renders the new password and confirmation fields before access (23 ms)\r\n\r\nTest Suites: 1 passed, 1 total\r\nTests:       1 passed, 1 total\r\nSnapshots:   0 total\r\nTime:        5.064 s\r\nRan all test suites.\r\n",
+        "durationMs": 13069,
+        "testResults": {
+          "testFramework": "jest",
+          "runnerDetectedFrom": "output_banner",
+          "testsTotal": 1,
+          "testsPassed": 1,
+          "testsFailed": 0,
+          "testsSkipped": 0,
+          "parseFailed": false
+        }
+      },
+      {
+        "name": "dev-server-serves-home",
+        "kind": "http-probe",
+        "verificationMethod": "http-status",
+        "passed": true,
+        "timedOut": false,
+        "skipped": false,
+        "skippedReason": null,
+        "exitCode": null,
+        "outputSample": "HTTP 200\n\u003C!DOCTYPE html\u003E\n\u003Chtml lang=\u0022fr\u0022\u003E\n  \u003Chead\u003E\n    \u003Cmeta charset=\u0022utf-8\u0022 /\u003E\n    \u003Cmeta name=\u0022viewport\u0022 content=\u0022width=device-width, initial-scale=1\u0022 /\u003E\n    \u003Cmeta name=\u0022theme-color\u0022 content=\u0022#0F2457\u0022 /\u003E\n    \u003Cmeta name=\u0022description\u0022 content=\u0022Syst\u00E8me de pointage de l\u0027ANSD\u0022 /\u003E\n    \u003Clink rel=\u0022icon\u0022 type=\u0022image/png\u0022 href=\u0022/images/ansd-logo.png\u0022 /\u003E\n    \u003Clink rel=\u0022preconnect\u0022 href=\u0022https://fonts.googleapis.com\u0022 /\u003E\n    \u003Clink rel=\u0022preconnect\u0022 href=\u0022https://fonts.gstatic.com\u0022 crossorigin /\u003E\n    \u003Clink\n      rel=\u0022stylesheet\u0022\n      href=\u0022https://fonts.googleapis.com/css2?family=DM\u002BSans:wght@400;500;600;700\u0026display=swap\u0022\n    /\u003E\n    \u003Ctitle\u003EPointage \u00B7 ANSD\u003C/title\u003E\n  \u003Cscript defer src=\u0022/static/js/bundle.js\u0022\u003E\u003C/script\u003E\u003C/head\u003E\n  \u003Cbody\u003E\n    \u003Cnoscript\u003EVous devez activer JavaScript pour utiliser cette application.\u003C/noscript\u003E\n    \u003Cdiv id=\u0022root\u0022\u003E\u003C/div\u003E\n  \u003C/body\u003E\n\u003C/html\u003E\n\n--- server output ---\n\r\n\u003E pointage-frontend@0.1.0 start\r\n\u003E react-scripts start\r\n\r\nBrowserslist: browsers data (caniuse-lite) is 11 months old. Please run:\r\n  npx update-browserslist-db@latest\r\n  Why you should do it regularly: https://github.com/browserslist/update-db#readme\r\n(node:130276) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: \u0027onAfterSetupMiddleware\u0027 option is deprecated. Please use the \u0027setupMiddlewares\u0027 option.\r\n(Use \u0060node --trace-deprecation ...\u0060 to show where the warning was created)\r\n(node:130276) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: \u0027onBeforeSetupMiddleware\u0027 option is deprecated. Please use the \u0027setupMiddlewares\u0027 option.\r\nStarting the development server...\r\n\r\nCompiled successfully!\r\n\r\nYou can now view pointage-frontend in the browser.\r\n\r\n  Local:            http://localhost:3000\r\n  On Your Network:  http://192.168.0.1:3000\r\n\r\nNote that the development build is not optimized.\r\nTo create a production build, use npm run build.\r\n\r\nwebpack compiled \u001B[1m\u001B[32msuccessfully\u001B[39m\u001B[22m\r\n",
+        "durationMs": 48891
+      }
+    ],
+    "executions": [
+      {
+        "source": "production-build",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "run",
+          "build"
+        ],
+        "cwd": "C:\\wamp64\\www\\mon_projet_pointage\\frontend",
+        "env": {
+          "CI": "true"
+        },
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "tests-pass",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "test",
+          "--",
+          "--watchAll=false",
+          "--runInBand"
+        ],
+        "cwd": "C:\\wamp64\\www\\mon_projet_pointage\\frontend",
+        "env": {
+          "CI": "true"
+        },
+        "prependPath": [],
+        "platform": "win32"
+      },
+      {
+        "source": "dev-server-serves-home",
+        "resolvedExecutable": "C:\\Program Files\\nodejs\\npm.CMD",
+        "args": [
+          "start"
+        ],
+        "cwd": "C:\\wamp64\\www\\mon_projet_pointage\\frontend",
+        "env": {
+          "BROWSER": "none"
+        },
+        "prependPath": [],
+        "platform": "win32"
+      }
+    ]
+  }
+}

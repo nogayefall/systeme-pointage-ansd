@@ -4,61 +4,32 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/FeedbackContext';
 import { Avatar, Icon } from '../ui';
 import { fullName } from '../../utils/formatters';
-import { isRh, isSecurity, isSuperAdmin, isSupervisor, roleLabel } from '../../utils/roles';
+import { isSecurity } from '../../utils/roles';
+import Sidebar from './Sidebar';
+import Topbar from './Topbar';
+import { navigationFor } from './navigation';
 import './layout.css';
+import './app-layout.css';
 
-function navFor(user) {
-  if (isRh(user)) {
-    const admin = [
-      ...(isSuperAdmin(user) ? [{ to: '/admin/utilisateurs', label: 'Utilisateurs', icon: 'users' }] : []),
-      { to: '/admin/services', label: 'Services', icon: 'list' },
-      ...(isSuperAdmin(user) ? [
-        { to: '/admin/roles', label: 'Rôles et permissions', icon: 'shield' },
-        { to: '/admin/badges', label: 'Badges', icon: 'badge' },
-      ] : []),
-    ];
-    return [
-      {
-        items: [
-          { to: '/admin', label: 'Tableau de bord', icon: 'dashboard', end: true },
-          { to: '/admin/pointages', label: 'Pointages', icon: 'clock' },
-          { to: '/admin/conges', label: 'Congés', icon: 'calendar' },
-          { to: '/admin/rapports', label: 'Rapports', icon: 'file' },
-        ],
-      },
-      { title: 'Administration', items: admin },
-    ];
-  }
-  if (isSecurity(user)) {
-    return [{ items: [{ to: '/securite', label: 'Pointage', icon: 'scan', end: true }] }];
-  }
-  if (isSupervisor(user)) {
-    return [
-      {
-        title: 'Mon équipe',
-        items: [
-          { to: '/equipe', label: 'Tableau de bord', icon: 'dashboard', end: true },
-          { to: '/equipe/pointages', label: 'Pointages', icon: 'clock' },
-          { to: '/equipe/rapports', label: 'Rapports', icon: 'file' },
-        ],
-      },
-      {
-        title: 'Mon espace',
-        items: [
-          { to: '/agent', label: 'Accueil', icon: 'home', end: true },
-          { to: '/agent/pointages', label: 'Mes pointages', icon: 'user' },
-          { to: '/agent/conges', label: 'Mes congés', icon: 'calendar' },
-        ],
-      },
-    ];
-  }
-  return [{
-    items: [
-      { to: '/agent', label: 'Accueil', icon: 'home', end: true },
-      { to: '/agent/pointages', label: 'Mes pointages', icon: 'clock' },
-      { to: '/agent/conges', label: 'Mes congés', icon: 'calendar' },
-    ],
-  }];
+function HeaderDateTime() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const time = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  const date = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const capitalizedDate = date.charAt(0).toUpperCase() + date.slice(1);
+
+  return (
+    <time className="staff-datetime" dateTime={now.toISOString()}>
+      <Icon name="clock" size={15} />
+      <strong>{time}</strong>
+      <span>{capitalizedDate}</span>
+    </time>
+  );
 }
 
 export default function AppLayout() {
@@ -66,6 +37,7 @@ export default function AppLayout() {
   const confirm = useConfirm();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const securityPortal = isSecurity(user);
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
@@ -75,55 +47,45 @@ export default function AppLayout() {
     }
   };
 
-  return (
-    <div className="shell">
-      <aside className={`sidebar ${open ? 'is-open' : ''}`} aria-label="Navigation principale">
-        <div className="sidebar-brand">
-          <span className="brand-tile"><img src="/images/ansd-logo.png" alt="" /></span>
-          <div>
-            <strong>Pointage</strong>
-            <span>ANSD</span>
-          </div>
-        </div>
-
-        <nav className="sidebar-nav">
-          {navFor(user).map((group, i) => (
-            <div className="nav-group" key={i}>
-              {group.title && <span className="nav-title">{group.title}</span>}
-              {group.items.map((item) => (
-                <NavLink key={item.to} to={item.to} end={item.end} className="nav-link">
-                  <Icon name={item.icon} size={18} />
-                  <span>{item.label}</span>
+  if (securityPortal) {
+    return (
+      <div className="shell staff-shell">
+        <div className="shell-main">
+          <header className="staff-topbar">
+            <div className="staff-brand">
+              <span className="staff-brand-tile"><img src="/images/ansd-logo.png" alt="Logo ANSD" /></span>
+              <span><strong>Pointage</strong><small>ANSD · Agence Nationale de la Statistique et de la Démographie</small></span>
+            </div>
+            <nav className="staff-nav" aria-label="Navigation principale">
+              {navigationFor(user).flatMap((group) => group.items).map((item) => (
+                <NavLink key={item.to} to={item.to} end={item.end} className="staff-nav-link">
+                  {item.label}
                 </NavLink>
               ))}
+            </nav>
+            <HeaderDateTime />
+            <div className="staff-profile">
+              <Avatar user={user} size={30} />
+              <span><strong>{fullName(user)}</strong><small>{user?.role}</small></span>
             </div>
-          ))}
-        </nav>
-
-        <div className="sidebar-user">
-          <Avatar user={user} size={36} />
-          <div className="sidebar-user-text">
-            <strong>{fullName(user)}</strong>
-            <span>{roleLabel(user)}</span>
-          </div>
-          <button type="button" className="sidebar-logout" onClick={onLogout} aria-label="Se déconnecter" title="Se déconnecter">
-            <Icon name="logout" size={18} />
-          </button>
+            <button type="button" className="staff-logout" onClick={onLogout}>
+              <Icon name="logout" size={15} />
+              <span>Déconnexion</span>
+            </button>
+          </header>
+          <main className="content staff-content" id="contenu"><Outlet /></main>
         </div>
-      </aside>
+      </div>
+    );
+  }
 
-      {open && <div className="sidebar-scrim" onClick={() => setOpen(false)} aria-hidden="true" />}
-
+  return (
+    <div className="shell app-shell">
+      <Sidebar user={user} open={open} onNavigate={() => setOpen(false)} />
+      {open && <button type="button" className="sidebar-scrim" onClick={() => setOpen(false)} aria-label="Fermer le menu" />}
       <div className="shell-main">
-        <header className="topbar">
-          <button type="button" className="topbar-menu" onClick={() => setOpen(true)} aria-label="Ouvrir le menu">
-            <Icon name="menu" size={22} />
-          </button>
-          <strong>Pointage · ANSD</strong>
-        </header>
-        <main className="content" id="contenu">
-          <Outlet />
-        </main>
+        <Topbar user={user} onMenu={() => setOpen(true)} onLogout={onLogout} />
+        <main className="content app-content" id="contenu"><Outlet /></main>
       </div>
     </div>
   );

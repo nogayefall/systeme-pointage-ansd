@@ -18,7 +18,7 @@ export default function AgentHomePage() {
 
   return (
     <>
-      <PageHeader title={`Bonjour ${user.prenom}`} subtitle={`${formatLongDate(todayIso())}${user.department ? ` · ${user.department}` : ''}`} />
+      <PageHeader variant="plain" title={`Bonjour ${user.prenom}`} subtitle={`${formatLongDate(todayIso())}${user.department ? ` · ${user.department}` : ''}`} />
       <Async state={state}>
         {({ days, totals, leaves }) => {
           const today = days.find((d) => d.date === todayIso());
@@ -36,7 +36,7 @@ export default function AgentHomePage() {
               </div>
 
               <Card title="Mes derniers jours" padded={false} actions={<Link to="/agent/pointages">Tout le détail</Link>}>
-                <DataTable dense rowKey="date" rows={days.slice(0, 6)} empty={<EmptyState icon="clock" title="Aucun pointage ce mois-ci" />}
+                <DataTable paginate={false} dense rowKey="date" rows={days.slice(0, 6)} empty={<EmptyState icon="clock" title="Aucun pointage ce mois-ci" />}
                   columns={[
                     { key: 'd', header: 'Jour', render: (d) => formatDate(d.date, { weekday: 'short', day: '2-digit', month: 'short' }) },
                     { key: 'in', header: 'Arrivée', className: 'num', render: (d) => (d.first ? formatTime(d.first) : '—') },
@@ -47,7 +47,7 @@ export default function AgentHomePage() {
               </Card>
 
               <Card title="Mes demandes de congé" padded={false} actions={<Link to="/agent/conges">Gérer</Link>}>
-                <DataTable dense rowKey="id" rows={leaves.slice(0, 4)} empty={<EmptyState icon="calendar" title="Aucune demande" />}
+                <DataTable paginate={false} dense rowKey="id" rows={leaves.slice(0, 4)} empty={<EmptyState icon="calendar" title="Aucune demande" />}
                   columns={[
                     { key: 'p', header: 'Période', render: (l) => `${formatDate(l.startDate)} → ${formatDate(l.endDate)}` },
                     { key: 'd', header: 'Durée', render: (l) => plural(workingDays(l.startDate, l.endDate), 'jour ouvré', 'jours ouvrés') },

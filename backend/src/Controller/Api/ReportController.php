@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 use App\Entity\Pointage;
 use App\Service\AgentDirectory;
 use App\Service\AttendanceCalculator;
+use App\Service\WorkSchedule;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
@@ -71,6 +72,7 @@ class ReportController extends AbstractController
                 'method' => $p->getMethod(),
                 'building' => $p->getBuilding(),
                 'datetime' => $p->getDateTime()->format('Y-m-d H:i:s'),
+                'late' => $p->getType() === 'ENTRY' && WorkSchedule::isLate($p->getDateTime()),
             ];
         }
 

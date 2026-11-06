@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import useFetch from '../../hooks/useFetch';
 import { errorMessage, permissionsApi, rolesApi } from '../../services/api';
 import { useConfirm, useToast } from '../../contexts/FeedbackContext';
-import { Async, Badge, Button, Card, DataTable, EmptyState, IconButton, PageHeader, RowActions } from '../../components/ui';
+import { Async, Badge, Button, Card, DataTable, EmptyState, IconButton, RowActions } from '../../components/ui';
 import RoleFormModal from '../../components/roles/RoleFormModal';
+import PageHero from '../../components/layout/PageHero';
+import { getPermissionDisplay } from '../../features/roles/permissionLabels';
 import { plural } from '../../utils/formatters';
 import './admin.css';
+import './roles.css';
 
 const SYSTEM_ROLES = ['Super Administrateur', 'Administrateur RH', 'Agent de Sécurité', 'Supérieur hiérarchique', 'Agent'];
 
@@ -31,16 +34,42 @@ export default function RolesPage() {
   const columns = [
     { key: 'name', header: 'Rôle', render: (r) => (
       <div>
-        <strong>{r.name}</strong> {SYSTEM_ROLES.includes(r.name) && <Badge tone="info">Système</Badge>}
+        <strong>{r.name}</strong> {SYSTEM_ROLES.includes(r.name) && (
+          <span className="role-system-lock" role="img" tabIndex={0} title="Rôle système" aria-label="Rôle système">
+            <svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="7" width="10" height="7" rx="1.5" />
+              <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2M8 10v1.5" />
+            </svg>
+          </span>
+        )}
         <div className="muted" style={{ fontSize: 'var(--text-sm)' }}>{r.description || '—'}</div>
       </div>
     ) },
     { key: 'perms', header: 'Permissions', render: (r) => (
       r.permissions?.length
-        ? <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>{r.permissions.map((p) => <Badge key={p.id}>{p.name}</Badge>)}</div>
+        ? (
+          <div className="role-permission-list">
+            {r.permissions.slice(0, 3).map((p) => (
+              <Badge key={p.id}>{getPermissionDisplay(p.name).label}</Badge>
+            ))}
+            {r.permissions.length > 3 && (
+              <span
+                className="badge badge-neutral role-permission-more"
+                title={r.permissions.slice(3).map((p) => getPermissionDisplay(p.name).label).join('\n')}
+                aria-label={`Autres permissions : ${r.permissions.slice(3).map((p) => getPermissionDisplay(p.name).label).join(', ')}`}
+                role="img"
+                tabIndex={0}
+              >
+                +{r.permissions.length - 3}
+              </span>
+            )}
+          </div>
+        )
         : <span className="muted">Aucune</span>
     ) },
-    { key: 'users', header: 'Utilisateurs', className: 'num', render: (r) => plural(r.usersCount ?? 0, 'utilisateur', 'utilisateurs') },
+    { key: 'users', header: 'Utilisateurs', className: 'role-users-cell', render: (r) => (
+      <span className="role-users-count">{plural(r.usersCount ?? 0, 'utilisateur', 'utilisateurs')}</span>
+    ) },
     { key: 'actions', header: '', align: 'right', width: 90, render: (r) => (
       <RowActions>
         <IconButton icon="edit" label="Modifier" onClick={() => setForm(r)} />
@@ -50,10 +79,10 @@ export default function RolesPage() {
   ];
 
   return (
-    <>
-      <PageHeader title="Rôles et permissions" subtitle="Définissez ce que chaque profil peut faire"
-        actions={<Button variant="primary" icon="plus" disabled={!state.data} onClick={() => setForm({})}>Nouveau rôle</Button>} />
-      <Card padded={false}>
+    <div className="roles-page">
+      <PageHero title="Rôles et permissions" subtitle="Définissez ce que chaque profil peut faire"
+        action={<Button variant="primary" icon="plus" disabled={!state.data} onClick={() => setForm({})}>Nouveau rôle</Button>} />
+      <Card className="roles-data-card" padded={false}>
         <Async state={state}>
           {({ roles }) => <DataTable columns={columns} rows={roles} empty={<EmptyState icon="shield" title="Aucun rôle" />} />}
         </Async>
@@ -64,6 +93,6 @@ export default function RolesPage() {
           onClose={() => setForm(null)}
           onSaved={(mode) => { setForm(null); toast.success(mode === 'create' ? 'Rôle créé.' : 'Rôle mis à jour.'); state.reload({ silent: true }); }} />
       )}
-    </>
+    </div>
   );
 }

@@ -5,10 +5,11 @@ import { errorMessage, pointagesApi, servicesApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfirm, useToast } from '../../contexts/FeedbackContext';
 import {
-  Async, Badge, Card, DataTable, EmptyState, IconButton, Input, PageHeader, Pagination, PersonCell, RowActions, SearchInput, Select,
+  Async, Card, DataTable, EmptyState, IconButton, Input, PageHeader, Pagination, PersonCell, RowActions, SearchInput, Select,
 } from '../../components/ui';
 import { isRh } from '../../utils/roles';
-import { BUILDING_LABEL, METHOD_LABEL, TYPE_LABEL, formatDate, formatTime, fullName, isLate } from '../../utils/formatters';
+import { BUILDING_LABEL, METHOD_LABEL, formatDate, formatTime, fullName } from '../../utils/formatters';
+import PointageTypeBadge, { PointageTypeLegend } from '../../components/pointages/PointageTypeBadge';
 import './admin.css';
 
 export default function PointagesPage() {
@@ -23,15 +24,16 @@ export default function PointagesPage() {
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const dq = useDebounce(q);
 
   const services = useFetch(() => servicesApi.list(), []);
   const state = useFetch(
     () => pointagesApi.list({
-      page, q: dq || undefined, type: type || undefined, building: building || undefined,
+      page, limit: pageSize, q: dq || undefined, type: type || undefined, building: building || undefined,
       departmentId: department || undefined, dateStart: dateStart || undefined, dateEnd: dateEnd || undefined,
     }),
-    [page, dq, type, building, department, dateStart, dateEnd]
+    [page, pageSize, dq, type, building, department, dateStart, dateEnd]
   );
   const reset = (setter) => (v) => { setter(v); setPage(1); };
   const list = services.data?.data || [];
@@ -52,9 +54,7 @@ export default function PointagesPage() {
 
   const columns = [
     { key: 'agent', header: 'Agent', render: (p) => <PersonCell user={p.agent} sub={p.agent.department?.name || p.agent.matricule} /> },
-    { key: 'type', header: 'Type', render: (p) => (
-      <Badge tone={p.type === 'ENTRY' ? (isLate(p.datetime) ? 'warning' : 'success') : 'info'}>{TYPE_LABEL[p.type]}</Badge>
-    ) },
+    { key: 'type', header: 'Type', render: (p) => <PointageTypeBadge type={p.type} late={p.late} /> },
     { key: 'date', header: 'Date', render: (p) => formatDate(p.datetime) },
     { key: 'time', header: 'Heure', className: 'num', render: (p) => formatTime(p.datetime) },
     { key: 'building', header: 'Bâtiment', render: (p) => BUILDING_LABEL[p.building] || p.building },
@@ -90,12 +90,14 @@ export default function PointagesPage() {
         <Input type="date" value={dateStart} onChange={(e) => reset(setDateStart)(e.target.value)} aria-label="Du" />
         <Input type="date" value={dateEnd} onChange={(e) => reset(setDateEnd)(e.target.value)} aria-label="Au" />
       </div>
+      <PointageTypeLegend />
       <Card padded={false}>
         <Async state={state}>
           {(res) => (
             <>
-              <DataTable columns={columns} rows={res.data} empty={<EmptyState title="Aucun pointage">Modifiez les filtres pour élargir la recherche.</EmptyState>} />
-              <Pagination page={res.pagination.page} pages={res.pagination.pages} total={res.pagination.total} onChange={setPage} unit="pointages" />
+              <DataTable paginate={false} columns={columns} rows={res.data} empty={<EmptyState title="Aucun pointage">Modifiez les filtres pour élargir la recherche.</EmptyState>} />
+              <Pagination page={res.pagination.page} pages={res.pagination.pages} total={res.pagination.total} pageSize={pageSize}
+                onChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} unit="pointages" />
             </>
           )}
         </Async>

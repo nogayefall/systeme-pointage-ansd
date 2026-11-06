@@ -187,6 +187,7 @@ class UserController extends AbstractController
         $user->setPrenom($data['prenom']);
         $user->setRole($role);
         $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
+        $user->setMustChangePassword($isSimpleAgent && !isset($data['password']));
         $user->setIsActive(true);
         if (($error = $this->applyDepartment($user, $data)) !== null) {
             return $error;
@@ -260,6 +261,7 @@ class UserController extends AbstractController
         if (!empty($data['resetPassword'])) {
             $plainPassword = $this->generatePassword();
             $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
+            $user->setMustChangePassword(true);
             $user->revokeApiToken();
         }
 

@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Repository\LeaveRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,7 +20,7 @@ class LeaveRequestController extends AbstractController
     public function __construct(private EntityManagerInterface $entityManager, private LeaveRequestRepository $leaveRepo) {}
 
     #[Route('', name: 'create', methods: ['POST'])]
-    #[IsGranted('ROLE_AGENT')]
+    #[IsGranted('ROLE_PERMISSION_REQUEST_LEAVE')]
     public function create(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -81,12 +82,13 @@ class LeaveRequestController extends AbstractController
     }
 
     #[Route('', name: 'list', methods: ['GET'])]
+    #[IsGranted(new Expression('is_granted("ROLE_PERMISSION_VIEW_OWN_LEAVES") or is_granted("ROLE_PERMISSION_MANAGE_LEAVES")'))]
     public function list(Request $request): JsonResponse
     {
         $user = $this->getUser();
 
         // RH ou Super Admin peuvent voir toutes les demandes
-        if ($this->isGranted('ROLE_RH_ADMIN') || $this->isGranted('ROLE_SUPER_ADMIN')) {
+        if ($this->isGranted('ROLE_PERMISSION_MANAGE_LEAVES')) {
             $leaves = $this->entityManager->getRepository(LeaveRequest::class)->findBy([], ['createdAt' => 'DESC']);
         } else {
             // Sinon seulement les siennes
@@ -117,7 +119,7 @@ class LeaveRequestController extends AbstractController
     }
 
     #[Route('/{id}/approve', name: 'approve', methods: ['POST'], requirements: ['id' => '\d+'])]
-    #[IsGranted('ROLE_RH_ADMIN')]
+    #[IsGranted('ROLE_PERMISSION_MANAGE_LEAVES')]
     public function approve(int $id): JsonResponse
     {
         $leave = $this->entityManager->getRepository(LeaveRequest::class)->find($id);
@@ -139,7 +141,7 @@ class LeaveRequestController extends AbstractController
     }
 
     #[Route('/{id}/reject', name: 'reject', methods: ['POST'], requirements: ['id' => '\d+'])]
-    #[IsGranted('ROLE_RH_ADMIN')]
+    #[IsGranted('ROLE_PERMISSION_MANAGE_LEAVES')]
     public function reject(int $id, Request $request): JsonResponse
     {
         $leave = $this->entityManager->getRepository(LeaveRequest::class)->find($id);
@@ -161,7 +163,7 @@ class LeaveRequestController extends AbstractController
     }
 
     #[Route('/{id}/cancel', name: 'cancel', methods: ['POST'], requirements: ['id' => '\d+'])]
-    #[IsGranted('ROLE_AGENT')]
+    #[IsGranted('ROLE_PERMISSION_REQUEST_LEAVE')]
     public function cancel(int $id): JsonResponse
     {
         $leave = $this->leaveRepo->find($id);

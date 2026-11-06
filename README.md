@@ -62,6 +62,4 @@ L'application sera disponible à : `http://localhost:3000`
 - Historique et statistiques des pointages
 - Gestion des rôles et permissions
 
----
 
-**Prêt à commencer le développement!** 

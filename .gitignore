@@ -2,6 +2,9 @@
 backend/var/
 backend/vendor/
 
+# PHP
+/vendor/
+
 # React
 frontend/node_modules/
 frontend/build/

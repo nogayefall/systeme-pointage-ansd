@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Security\PermissionCatalog;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -45,6 +46,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     private bool $isActive = true;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $mustChangePassword = false;
 
     /** Empreinte SHA-256 du jeton d'API (le jeton en clair n'est jamais stocké). */
     #[ORM\Column(length: 64, nullable: true, unique: true)]
@@ -145,6 +149,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             ];
             
             $roles[] = $roleMapping[$roleName] ?? 'ROLE_' . strtoupper(str_replace(' ', '_', $roleName));
+            foreach ($this->role->getPermissions() as $permission) {
+                $permissionName = $permission->getName();
+                if ($permissionName !== null) {
+                    $roles[] = PermissionCatalog::SYMFONY_PERMISSION_PREFIX . strtoupper($permissionName);
+                }
+            }
         }
 
         return array_unique($roles);
@@ -212,6 +222,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setIsActive(bool $isActive): static
     {
         $this->isActive = $isActive;
+
+        return $this;
+    }
+
+    public function mustChangePassword(): bool
+    {
+        return $this->mustChangePassword;
+    }
+
+    public function setMustChangePassword(bool $mustChangePassword): static
+    {
+        $this->mustChangePassword = $mustChangePassword;
 
         return $this;
     }

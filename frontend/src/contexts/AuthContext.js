@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { authApi, session, AUTH_EXPIRED_EVENT } from '../services/api';
+import { authApi, session, AUTH_EXPIRED_EVENT, PASSWORD_CHANGE_REQUIRED_EVENT } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -12,8 +12,15 @@ export function AuthProvider({ children }) {
       setUser(null);
       setExpired(true);
     };
+    const onPasswordChangeRequired = () => {
+      setUser((currentUser) => currentUser ? { ...currentUser, mustChangePassword: true } : currentUser);
+    };
     window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
-    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
+    window.addEventListener(PASSWORD_CHANGE_REQUIRED_EVENT, onPasswordChangeRequired);
+    return () => {
+      window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
+      window.removeEventListener(PASSWORD_CHANGE_REQUIRED_EVENT, onPasswordChangeRequired);
+    };
   }, []);
 
   const login = useCallback(async (identifier, password) => {
@@ -30,7 +37,15 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const value = useMemo(() => ({ user, login, logout, expired }), [user, login, logout, expired]);
+  const changePassword = useCallback(async (newPassword, confirmPassword) => {
+    const data = await authApi.changePassword(newPassword, confirmPassword);
+    const updatedUser = data.user;
+    session.save(session.getToken(), updatedUser);
+    setUser(updatedUser);
+    return updatedUser;
+  }, []);
+
+  const value = useMemo(() => ({ user, login, logout, changePassword, expired }), [user, login, logout, changePassword, expired]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

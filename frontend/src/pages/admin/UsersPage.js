@@ -19,13 +19,14 @@ export default function UsersPage() {
   const [q, setQ] = useState('');
   const [role, setRole] = useState('');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [form, setForm] = useState(null); // null | {} (création) | utilisateur (modification)
   const [secret, setSecret] = useState(null);
   const dq = useDebounce(q);
 
   const roles = useFetch(() => rolesApi.list(), []);
   const services = useFetch(() => servicesApi.list(), []);
-  const state = useFetch(() => usersApi.list({ page, limit: 10, q: dq || undefined, role: role || undefined }), [page, dq, role]);
+  const state = useFetch(() => usersApi.list({ page, limit: pageSize, q: dq || undefined, role: role || undefined }), [page, pageSize, dq, role]);
 
   const onSaved = (result) => {
     setForm(null);
@@ -87,8 +88,9 @@ export default function UsersPage() {
         <Async state={state}>
           {(res) => (
             <>
-              <DataTable columns={columns} rows={res.data} empty={<EmptyState icon="users" title="Aucun utilisateur trouvé" />} />
-              <Pagination page={res.pagination.page} pages={res.pagination.pages} total={res.pagination.total} onChange={setPage} unit="utilisateurs" />
+              <DataTable paginate={false} columns={columns} rows={res.data} empty={<EmptyState icon="users" title="Aucun utilisateur trouvé" />} />
+              <Pagination page={res.pagination.page} pages={res.pagination.pages} total={res.pagination.total} pageSize={pageSize}
+                onChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} unit="utilisateurs" />
             </>
           )}
         </Async>

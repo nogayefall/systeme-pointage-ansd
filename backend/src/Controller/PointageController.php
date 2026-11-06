@@ -8,6 +8,7 @@ use App\Repository\LeaveRequestRepository;
 use App\Security\PermissionCatalog;
 use App\Service\AgentDirectory;
 use App\Service\AttendanceCalculator;
+use App\Service\WorkSchedule;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
@@ -30,7 +31,7 @@ class PointageController extends AbstractController
     }
 
     /**
-     * Historique paginé (50 par page). Filtres : q, type, building, dateStart, dateEnd, departmentId.
+     * Historique paginé (50 par défaut). Filtres : q, type, building, dateStart, dateEnd, departmentId.
      * Un supérieur hiérarchique ne voit que les pointages de son équipe.
      */
     #[Route('', name: 'list', methods: ['GET'])]
@@ -38,11 +39,11 @@ class PointageController extends AbstractController
     public function list(Request $request): JsonResponse
     {
         $page = max(1, (int) $request->query->get('page', 1));
-        $limit = 50;
+        $limit = min(100, max(1, (int) $request->query->get('limit', 50)));
 
         $agents = $this->directory->employees($request->query->get('departmentId'), $request->query->get('q'), false);
         if (!$agents) {
-            return $this->json(['success' => true, 'data' => [], 'pagination' => ['page' => 1, 'pages' => 0, 'total' => 0]]);
+            return $this->json(['success' => true, 'data' => [], 'pagination' => ['page' => 1, 'pages' => 0, 'total' => 0, 'limit' => $limit]]);
         }
 
         $qb = $this->entityManager->getRepository(Pointage::class)->createQueryBuilder('p')
@@ -69,7 +70,7 @@ class PointageController extends AbstractController
         return $this->json([
             'success' => true,
             'data' => array_map(fn (Pointage $p) => $this->payload($p), $pointages),
-            'pagination' => ['page' => $page, 'pages' => (int) ceil($total / $limit), 'total' => $total],
+            'pagination' => ['page' => $page, 'pages' => (int) ceil($total / $limit), 'total' => $total, 'limit' => $limit],
         ]);
     }
 
@@ -210,7 +211,7 @@ class PointageController extends AbstractController
     }
 
     #[Route('/my', name: 'my_pointages', methods: ['GET'])]
-    #[IsGranted('ROLE_AGENT')]
+    #[IsGranted('ROLE_PERMISSION_VIEW_OWN_POINTAGES')]
     public function myPointages(Request $request): JsonResponse
     {
         $user = $this->getUser();
@@ -240,7 +241,7 @@ class PointageController extends AbstractController
      * (présent, retard, congé, absent). GET /api/pointages/my/days?month=2026-10
      */
     #[Route('/my/days', name: 'my_days', methods: ['GET'])]
-    #[IsGranted('ROLE_AGENT')]
+    #[IsGranted('ROLE_PERMISSION_VIEW_OWN_POINTAGES')]
     public function myDays(Request $request): JsonResponse
     {
         $month = (string) $request->query->get('month', (new \DateTimeImmutable())->format('Y-m'));
@@ -288,6 +289,7 @@ class PointageController extends AbstractController
             'method' => $p->getMethod(),
             'building' => $p->getBuilding(),
             'datetime' => $p->getDateTime()?->format('Y-m-d H:i:s'),
+            'late' => $p->getType() === 'ENTRY' && $p->getDateTime() !== null && WorkSchedule::isLate($p->getDateTime()),
             'notes' => $p->getNotes(),
         ];
     }

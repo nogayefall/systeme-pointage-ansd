@@ -1,0 +1,10 @@
+MISE A JOUR BACKEND - Systeme de pointage ANSD
+1. Copier le contenu de ce dossier dans votre projet Symfony (src/, migrations/, config/) en ecrasant.
+2. php bin/console cache:clear
+3. php bin/console doctrine:migrations:migrate
+4. php bin/console app:init-roles
+5. php bin/console app:seed-demo      (regenere les donnees de demo + demo-identifiants.csv)
+6. php bin/console doctrine:schema:validate
+7. php -S 127.0.0.1:8000 -t public
+Mot de passe des comptes de demo : Ansd@2026
+Nouveaux comptes : chefs de service 200001-200006, agents de securite 800001-800005, RH 900001/900002.

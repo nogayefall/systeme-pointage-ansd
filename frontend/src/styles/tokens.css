@@ -4,6 +4,22 @@
  * Toute couleur, taille ou ombre utilisée dans l'application doit venir d'ici.
  */
 :root {
+  /* Tokens du layout ANSD */
+  --color-primary: #1a3a89;
+  --color-primary-dark: #0f2457;
+  --color-primary-soft: #f2f6fb;
+  --color-accent: #9edbea;
+  --color-surface: #ffffff;
+  --color-bg: #f2f6fb;
+  --color-on-primary: #d5e0f2;
+  --color-text: #162033;
+  --color-muted: #556277;
+  --color-border: #d5e0ec;
+  --color-primary-overlay: rgba(255, 255, 255, 0.1);
+  --color-focus: rgba(158, 219, 234, 0.65);
+  --radius-pill: 999px;
+  --shadow-card: 0 1px 3px rgba(15, 36, 87, 0.08), 0 8px 24px rgba(15, 36, 87, 0.06);
+
   /* Marque (logo ANSD) */
   --navy-950: #0a1a40;
   --navy-900: #0f2457; /* sidebar, panneaux de marque */
@@ -22,17 +38,22 @@
   --line: #d5e0ec;
   --line-strong: #a9b8cb;
   --surface: #ffffff;
+  --surface-subtle: #f8fafc;
+  --line-control: #c7d2e0;
   --bg: #f2f6fb;
 
   /* Sémantique (texte sur fond clair : contraste AA) */
   --success: #1e6b45;
   --success-bg: #e4f3ea;
+  --color-success-soft: #e4f3ea;
   --warning: #7a4f00;
   --warning-bg: #fff3d6;
+  --color-warning-soft: #fff3d6;
   --danger: #b42318;
   --danger-bg: #fdeceb;
   --info: var(--navy-700);
   --info-bg: var(--blue-100);
+  --color-info-soft: #e3eef8;
 
   /* Typographie */
   --font: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
@@ -56,13 +77,16 @@
   /* Formes */
   --radius-sm: 6px;
   --radius: 10px;
-  --radius-lg: 14px;
+  --radius-lg: 16px;
   --shadow-sm: 0 1px 2px rgba(15, 36, 87, 0.06);
   --shadow: 0 1px 3px rgba(15, 36, 87, 0.08), 0 8px 24px rgba(15, 36, 87, 0.06);
   --shadow-lg: 0 20px 50px rgba(10, 26, 64, 0.25);
 
   /* Mise en page */
-  --sidebar-w: 256px;
+  --sidebar-w: 280px;
   --content-max: 1280px;
   --focus: 0 0 0 3px rgba(26, 58, 137, 0.35);
+  --focus-ring: 0 0 0 3px rgba(26, 58, 137, 0.22);
+  --brand-on-dark: #d5e0f2;
+  --brand-muted: #a9bad8;
 }

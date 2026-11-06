@@ -7,6 +7,7 @@ import { Spinner } from './components/ui';
 import { homePathFor, isEmployee, isRh, isSecurity, isSuperAdmin, isSupervisor } from './utils/roles';
 
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const PasswordChangePage = lazy(() => import('./pages/auth/PasswordChangePage'));
 const DashboardPage = lazy(() => import('./pages/admin/DashboardPage'));
 const PointagesPage = lazy(() => import('./pages/admin/PointagesPage'));
 const LeavesPage = lazy(() => import('./pages/admin/LeavesPage'));
@@ -25,12 +26,14 @@ function Guard({ allow }) {
   const { user } = useAuth();
   const location = useLocation();
   if (!user) return <Navigate to="/connexion" replace state={{ from: location.pathname }} />;
+  if (user.mustChangePassword) return <Navigate to="/connexion/nouveau-mot-de-passe" replace />;
   if (allow && !allow(user)) return <Navigate to={homePathFor(user)} replace />;
   return <AppLayout />;
 }
 
 function Home() {
   const { user } = useAuth();
+  if (user?.mustChangePassword) return <Navigate to="/connexion/nouveau-mot-de-passe" replace />;
   return <Navigate to={user ? homePathFor(user) : '/connexion'} replace />;
 }
 
@@ -48,6 +51,7 @@ export default function App() {
           <Suspense fallback={<Spinner />}>
             <Routes>
               <Route path="/connexion" element={<LoginPage />} />
+              <Route path="/connexion/nouveau-mot-de-passe" element={<PasswordChangePage />} />
 
               <Route element={<Guard allow={isRh} />}>
                 <Route path="/admin" element={<DashboardPage />} />

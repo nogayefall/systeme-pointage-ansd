@@ -1,0 +1,5 @@
+MISE A JOUR FRONT - Systeme de pointage ANSD
+1. Supprimer l'ancien dossier src/ de votre projet React, puis copier le nouveau src/.
+2. Copier public/index.html et public/images/ansd-logo.png.
+3. npm start
+Aucune nouvelle dependance (chart.js et react-chartjs-2 deja utilises).

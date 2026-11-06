@@ -53,9 +53,10 @@ export default function BadgesPage() {
   const confirm = useConfirm();
   const toast = useToast();
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [creating, setCreating] = useState(false);
   const agents = useFetch(() => usersApi.agents(), []);
-  const state = useFetch(() => badgesApi.list({ page, limit: 15 }), [page]);
+  const state = useFetch(() => badgesApi.list({ page, limit: pageSize }), [page, pageSize]);
 
   const remove = async (b) => {
     const ok = await confirm({ title: 'Dissocier le badge', message: `Dissocier le badge ${b.badgeCode} de ${fullName(b.agent)} ?`, confirmLabel: 'Dissocier', danger: true });
@@ -83,8 +84,9 @@ export default function BadgesPage() {
         <Async state={state}>
           {(res) => (
             <>
-              <DataTable columns={columns} rows={res.data} empty={<EmptyState icon="badge" title="Aucun badge associé" />} />
-              <Pagination page={res.pagination.page} pages={res.pagination.pages} total={res.pagination.total} onChange={setPage} unit="badges" />
+              <DataTable paginate={false} columns={columns} rows={res.data} empty={<EmptyState icon="badge" title="Aucun badge associé" />} />
+              <Pagination page={res.pagination.page} pages={res.pagination.pages} total={res.pagination.total} pageSize={pageSize}
+                onChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} unit="badges" />
             </>
           )}
         </Async>

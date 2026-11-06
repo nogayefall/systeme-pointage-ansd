@@ -3,7 +3,7 @@ import useFetch from '../../hooks/useFetch';
 import useInterval from '../../hooks/useInterval';
 import { errorMessage, pointagesApi, usersApi } from '../../services/api';
 import {
-  Async, Badge, Button, Card, EmptyState, Field, Icon, PageHeader, PersonCell, Segmented, Select,
+  Async, Badge, Button, Card, EmptyState, Field, Icon, PageHeader, PersonCell, Segmented,
 } from '../../components/ui';
 import { BUILDING_LABEL, TYPE_LABEL, formatTime, fullName, isLate } from '../../utils/formatters';
 import './security.css';
@@ -27,12 +27,19 @@ function scanChar(e) {
   return null;
 }
 
+function normalizeSearch(value) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr');
+}
+
 export default function ScanPage() {
   const [mode, setMode] = useState('auto');
   const [building, setBuilding] = useState(readBuilding);
   const [result, setResult] = useState(null); // { ok, agent, type, time, message }
   const [busy, setBusy] = useState(false);
   const [manualAgent, setManualAgent] = useState('');
+  const [manualQuery, setManualQuery] = useState('');
+  const [manualSearchOpen, setManualSearchOpen] = useState(false);
+  const [activeAgentIndex, setActiveAgentIndex] = useState(-1);
   const buffer = useRef('');
   const lastKey = useRef(0);
   const modeRef = useRef(mode);
@@ -93,7 +100,37 @@ export default function ScanPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, [record]);
 
-  const selected = (agents.data?.data || []).find((a) => String(a.id) === manualAgent);
+  const agentList = agents.data?.data || [];
+  const selected = agentList.find((a) => String(a.id) === manualAgent);
+  const query = normalizeSearch(manualQuery.trim());
+  const matchingAgents = query
+    ? agentList.filter((agent) => {
+      const nameParts = normalizeSearch(fullName(agent)).split(/\s+/);
+      const matricule = normalizeSearch(agent.matricule || '');
+      return nameParts.some((part) => part.startsWith(query)) || matricule.startsWith(query);
+    }).slice(0, 8)
+    : [];
+  const selectManualAgent = (agent) => {
+    setManualAgent(String(agent.id));
+    setManualQuery(`${fullName(agent)} (${agent.matricule})`);
+    setManualSearchOpen(false);
+  };
+  const onManualSearchKeyDown = (e) => {
+    if (e.key === 'ArrowDown' && matchingAgents.length) {
+      e.preventDefault();
+      setManualSearchOpen(true);
+      setActiveAgentIndex((index) => (index + 1) % matchingAgents.length);
+    } else if (e.key === 'ArrowUp' && matchingAgents.length) {
+      e.preventDefault();
+      setManualSearchOpen(true);
+      setActiveAgentIndex((index) => (index <= 0 ? matchingAgents.length - 1 : index - 1));
+    } else if (e.key === 'Enter' && manualSearchOpen && matchingAgents.length) {
+      e.preventDefault();
+      selectManualAgent(matchingAgents[activeAgentIndex] || matchingAgents[0]);
+    } else if (e.key === 'Escape') {
+      setManualSearchOpen(false);
+    }
+  };
 
   return (
     <>
@@ -140,10 +177,62 @@ export default function ScanPage() {
           <Card title="Pointage manuel" subtitle="En cas de badge oublié ou illisible">
             <div className="manual">
               <Field label="Agent">
-                <Select value={manualAgent} onChange={(e) => setManualAgent(e.target.value)}>
-                  <option value="">Sélectionner un agent…</option>
-                  {(agents.data?.data || []).map((a) => <option key={a.id} value={a.id}>{fullName(a)} ({a.matricule})</option>)}
-                </Select>
+                <div className="manual-agent">
+                  <div className="manual-agent-input">
+                    <Icon name="search" size={18} />
+                    <input
+                      className="control"
+                      type="search"
+                      role="combobox"
+                      aria-autocomplete="list"
+                      aria-expanded={manualSearchOpen && matchingAgents.length > 0}
+                      aria-controls="manual-agent-options"
+                      aria-activedescendant={manualSearchOpen && matchingAgents[activeAgentIndex]
+                        ? `manual-agent-option-${matchingAgents[activeAgentIndex].id}` : undefined}
+                      placeholder="Rechercher par nom ou matricule…"
+                      value={manualQuery}
+                      onChange={(e) => {
+                        setManualQuery(e.target.value);
+                        setManualAgent('');
+                        setActiveAgentIndex(-1);
+                        setManualSearchOpen(true);
+                      }}
+                      onFocus={() => {
+                        if (manualQuery && !selected) setManualSearchOpen(true);
+                      }}
+                      onBlur={() => setManualSearchOpen(false)}
+                      onKeyDown={onManualSearchKeyDown}
+                      autoComplete="off"
+                    />
+                  </div>
+                  {manualSearchOpen && query && (
+                    <div className="manual-agent-results" id="manual-agent-options" role="listbox" aria-label="Agents correspondants">
+                      {agents.loading && <div className="manual-agent-message">Chargement des agents…</div>}
+                      {!agents.loading && agents.error && (
+                        <div className="manual-agent-message" role="status">{agents.error}</div>
+                      )}
+                      {!agents.loading && !agents.error && matchingAgents.length === 0 && (
+                        <div className="manual-agent-message">Aucun agent trouvé.</div>
+                      )}
+                      {!agents.loading && matchingAgents.map((agent, index) => (
+                        <div
+                          key={agent.id}
+                          id={`manual-agent-option-${agent.id}`}
+                          className={`manual-agent-option${activeAgentIndex === index ? ' is-active' : ''}`}
+                          role="option"
+                          aria-selected={String(agent.id) === manualAgent}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onMouseEnter={() => setActiveAgentIndex(index)}
+                          onClick={() => selectManualAgent(agent)}
+                        >
+                          <span>{fullName(agent)}</span>
+                          <small>{agent.matricule}</small>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {selected && <span className="manual-agent-selected">Agent sélectionné : {fullName(selected)}</span>}
+                </div>
               </Field>
               <Button variant="primary" icon="check" disabled={!selected || busy} loading={busy}
                 onClick={() => record(selected.matricule, 'MANUAL')}>Pointer</Button>
