@@ -228,6 +228,9 @@ final class DemoDataFactory
 
         // [index agent, début (jours / aujourd'hui), durée en jours OUVRÉS, motif, statut]
         $plan = [
+            // Awa Dramé (matricule 100101) : historique visible dans « Mes congés ».
+            [0, -20, 3, 'Congé annuel', 'APPROVED'],
+            [0, 12, 5, 'Congé annuel', 'PENDING'],
             // Passés, approuvés
             [2, -49, 10, 'Congé annuel', 'APPROVED'],
             [5, -40, 3, 'Maladie (certificat médical)', 'APPROVED'],

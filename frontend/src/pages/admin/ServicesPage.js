@@ -69,7 +69,9 @@ export default function ServicesPage() {
             {res.unassigned > 0 && (
               <div className="notice" role="status">
                 <Icon name="info" size={18} />
-                {plural(res.unassigned, 'agent n’est rattaché', 'agents ne sont rattachés')} à aucun service : ils n’apparaissent dans aucune équipe.
+                {res.unassigned === 1
+                  ? '1 agent n’est rattaché à aucun service : il n’apparaît dans aucune équipe.'
+                  : `${res.unassigned} agents ne sont rattachés à aucun service : ils n’apparaissent dans aucune équipe.`}
               </div>
             )}
             <Card padded={false}>

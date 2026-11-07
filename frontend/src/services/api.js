@@ -83,7 +83,9 @@ export const authApi = {
     return post('/auth/login', body);
   },
   me: () => get('/auth/me'),
-  logout: () => post('/auth/logout'),
+  logout: (token = session.getToken()) => http.post('/auth/logout', {}, {
+    ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+  }).then((r) => r.data),
   changePassword: (newPassword, confirmPassword) => post('/auth/change-password', { newPassword, confirmPassword }),
 };
 

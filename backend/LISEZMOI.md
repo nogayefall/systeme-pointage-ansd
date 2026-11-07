@@ -15,6 +15,9 @@ php bin/console doctrine:migrations:migrate
 php bin/console app:init-roles
 php bin/console app:seed-demo
 ```
+- Pour générer uniquement les pointages de démonstration d’aujourd’hui sans effacer les autres données :
+  `php bin/console app:seed-demo-today`
+  Après confirmation, cette commande remplace les pointages du jour des comptes Agent et Supérieur hiérarchique de la démo. Elle ne modifie ni les autres utilisateurs, ni les congés, badges et pointages des autres comptes. Une date peut être précisée avec `--date=AAAA-MM-JJ`.
 - `migrate` : tables en InnoDB, clés étrangères, nettoyage des lignes orphelines, jetons hachés.
   Tous les utilisateurs sont déconnectés (anciens jetons invalidés) : c'est normal.
 - `app:seed-demo` : **supprime tous les pointages, congés, badges et utilisateurs sauf les Super Administrateurs**,

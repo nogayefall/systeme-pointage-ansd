@@ -71,7 +71,7 @@ class StatisticsController extends AbstractController
 
         $total = count($agents);
         $working = WorkSchedule::isWorkingDay($date);
-        $expected = $total - $leave;
+        $expected = $total;
 
         $pointages = $this->dayPointages($date, $agents);
         $entries = count(array_filter($pointages, static fn (Pointage $p) => $p->getType() === 'ENTRY'));

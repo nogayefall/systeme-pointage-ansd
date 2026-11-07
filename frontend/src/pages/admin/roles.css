@@ -97,7 +97,7 @@
 }
 
 .modal-role-form .role-name-readonly,
-.modal-role-form .role-name-readonly:focus {
+.modal-role-form .role-name-readonly:focus-visible {
   background: var(--blue-50);
   color: var(--muted);
 }

@@ -117,7 +117,7 @@
   font-family: inherit;
 }
 
-.input-group input:focus {
+.input-group input:focus-visible {
   outline: none;
   border-color: #003d7a;
   box-shadow: 0 0 0 4px rgba(0, 61, 122, 0.08);

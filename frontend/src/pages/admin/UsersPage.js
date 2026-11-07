@@ -78,7 +78,7 @@ export default function UsersPage() {
       <PageHeader title="Utilisateurs" subtitle="Comptes des agents, de la sécurité et de l'administration"
         actions={<Button variant="primary" icon="plus" disabled={!roles.data} onClick={() => setForm({})}>Nouvel utilisateur</Button>} />
       <div className="toolbar">
-        <SearchInput value={q} onChange={(v) => { setQ(v); setPage(1); }} placeholder="Nom, matricule ou e-mail…" />
+        <SearchInput value={q} onChange={(v) => { setQ(v); setPage(1); }} placeholder="Nom, matricule, e-mail…" />
         <Select value={role} onChange={(e) => { setRole(e.target.value); setPage(1); }} aria-label="Rôle">
           <option value="">Tous les rôles</option>
           {(roles.data?.data || []).map((r) => <option key={r.id} value={r.name}>{r.name}</option>)}

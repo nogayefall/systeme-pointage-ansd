@@ -42,9 +42,9 @@
   background: var(--surface-subtle); transition: border-color .18s, box-shadow .18s, background .18s;
 }
 .login-card .control:hover { border-color: var(--navy-600); background: var(--surface); }
-.login-card .control:focus { border-color: var(--navy-700); box-shadow: var(--focus-ring); background: var(--surface); }
+.login-card .control:focus-visible { border-color: var(--navy-700); box-shadow: var(--focus-ring); background: var(--surface); }
 .login-card .control[aria-invalid="true"] { border-color: var(--danger); }
-.login-card .control[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px rgba(180, 35, 24, .16); }
+.login-card .control[aria-invalid="true"]:focus-visible { box-shadow: 0 0 0 3px rgba(180, 35, 24, .16); }
 .login-submit {
   width: 100%; height: 48px; border-radius: var(--radius);
   transition: background .18s, transform .15s, box-shadow .18s;

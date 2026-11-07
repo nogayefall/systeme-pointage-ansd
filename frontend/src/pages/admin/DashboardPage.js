@@ -15,7 +15,8 @@ import {
 } from '../../utils/formatters';
 import './admin.css';
 
-const percentage = (value, total) => (total > 0 ? Math.round((value / total) * 100) : 0);
+const percentageFormatter = new Intl.NumberFormat('fr-FR', { style: 'percent', maximumFractionDigits: 1 });
+const percentage = (value, total) => percentageFormatter.format(total > 0 ? value / total : 0);
 
 function DashboardKpi({ tone, label, value, hint }) {
   return (
@@ -94,11 +95,18 @@ export default function DashboardPage() {
                   tone="present"
                   label="Présents"
                   value={present}
-                  hint={`sur ${total} agents · ${kpis.attendanceRate ?? percentage(present, total)} % · Siège ${kpis.byBuilding?.SIEGE ?? 0} · Annexe ${kpis.byBuilding?.ANNEXE ?? 0}`}
+                  hint={(
+                    <>
+                      <span>sur {total} agents · {percentage(present, total)}</span>
+                      <span className="dashboard-kpi-hint-detail">
+                        Siège {kpis.byBuilding?.SIEGE ?? 0} · Annexe {kpis.byBuilding?.ANNEXE ?? 0}
+                      </span>
+                    </>
+                  )}
                 />
-                <DashboardKpi tone="late" label="Retards" value={late} hint={`sur ${total} agents · ${percentage(late, total)} %`} />
-                <DashboardKpi tone="absent" label="Absents" value={absent} hint={`sur ${total} agents · ${percentage(absent, total)} %`} />
-                <DashboardKpi tone="leave" label="En congé" value={leave} hint={`sur ${total} agents · ${percentage(leave, total)} %`} />
+                <DashboardKpi tone="late" label="Retards" value={late} hint={`sur ${total} agents · ${percentage(late, total)}`} />
+                <DashboardKpi tone="absent" label="Absents" value={absent} hint={`sur ${total} agents · ${percentage(absent, total)}`} />
+                <DashboardKpi tone="leave" label="En congé" value={leave} hint={`sur ${total} agents · ${percentage(leave, total)}`} />
               </section>
 
               <section className={`dashboard-columns${rh ? ' has-leaves' : ''}`} aria-label="Activité du jour">

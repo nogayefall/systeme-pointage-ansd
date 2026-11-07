@@ -59,7 +59,8 @@
 .dashboard-kpi-absent .dashboard-kpi-label > span { background: #b42318; }
 .dashboard-kpi-leave .dashboard-kpi-label > span { background: #1a3a89; }
 .dashboard-kpi-value { margin-top: 4px; color: #162033; font-size: 32px; font-weight: 700; line-height: 1.15; }
-.dashboard-kpi-hint { overflow: hidden; margin-top: 4px; color: var(--dashboard-muted); font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-kpi-hint { margin-top: 4px; color: var(--dashboard-muted); font-size: 11.5px; }
+.dashboard-kpi-hint-detail { display: block; color: var(--dashboard-muted); font-size: 11px; }
 
 .dashboard-columns { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: start; gap: 24px; }
 .dashboard-side { display: flex; min-width: 0; flex-direction: column; gap: 24px; }

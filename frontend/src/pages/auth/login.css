@@ -181,7 +181,7 @@
   color: #7a8ca5;
 }
 
-.login__form .control:focus {
+.login__form .control:focus-visible {
   outline: 3px solid rgba(0, 180, 216, .35);
   border-color: var(--ansd-primary);
   box-shadow: none;

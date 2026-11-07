@@ -98,7 +98,7 @@ export default function LoginPage() {
               onChange={(e) => setIdentifier(e.target.value)}
               autoComplete="username"
               autoFocus
-              placeholder="Ex. ANSD-00123 ou adresse e-mail"
+              placeholder="Ex. 100108 ou prenom.nom@ansd.sn"
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? 'login-error' : undefined}
               required

@@ -32,10 +32,35 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async () => {
-    try { await authApi.logout(); } catch { /* le jeton est de toute façon effacé ici */ }
+    const token = session.getToken();
     session.clear();
     setUser(null);
+    try { await authApi.logout(token); } catch { /* le jeton est de toute façon effacé ici */ }
   }, []);
+
+  useEffect(() => {
+    if (!user) return undefined;
+
+    let timer;
+    const expireSession = () => {
+      setExpired(true);
+      void logout();
+    };
+    const resetTimer = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(expireSession, 30 * 60 * 1000);
+    };
+    const activityEvents = ['mousemove', 'keydown', 'click'];
+    activityEvents.forEach((event) => window.addEventListener(event, resetTimer));
+    window.addEventListener('scroll', resetTimer, true);
+    resetTimer();
+
+    return () => {
+      window.clearTimeout(timer);
+      activityEvents.forEach((event) => window.removeEventListener(event, resetTimer));
+      window.removeEventListener('scroll', resetTimer, true);
+    };
+  }, [user, logout]);
 
   const changePassword = useCallback(async (newPassword, confirmPassword) => {
     const data = await authApi.changePassword(newPassword, confirmPassword);

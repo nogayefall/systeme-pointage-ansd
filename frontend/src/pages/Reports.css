@@ -129,8 +129,8 @@
   min-width: 200px;
 }
 
-.filter-group input:focus,
-.filter-group select:focus {
+.filter-group input:focus-visible,
+.filter-group select:focus-visible {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -346,7 +346,7 @@
   cursor: pointer;
 }
 
-.kpi-date-picker:focus {
+.kpi-date-picker:focus-visible {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
